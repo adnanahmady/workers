@@ -1,0 +1,7 @@
+<?php
+
+require_once __DIR__ . '/workers/bootstrap.php';
+
+use Workers\Worker;
+
+Worker::connect()->channel()->consume($queue)->run();
