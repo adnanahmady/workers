@@ -10,8 +10,7 @@ class Logger {
         if (static::$logger === NULL) {
             static::$logger = new static;
 
-            global $logConfig;
-            static::$logger->debug = new Debug($logConfig['logName'], $logConfig['logType']);
+            static::$logger->debug = new Debug(app('logName'), app('logType'));
         }
 
         return static::$logger->debug->$name(static::cleanAgrs($arguments));

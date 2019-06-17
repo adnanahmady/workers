@@ -17,7 +17,7 @@ class ShebaTransactionCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
         if (! empty($data["referenceNumber"])) return $msg;
-        $db = MongoConnection::connect()->{env('MONGO_DB', 'test')};
+        $db = MongoConnection::connect()->{app('mongo.db')};
         $token = $this->getToken($db->login);
 
         $options = [

@@ -18,7 +18,7 @@ class SamanTransactionCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
 //        if (! empty($data["referenceNumber"])) return $msg;
-        $collection = MongoConnection::connect()->{env('MONGO_DB', 'test')};
+        $collection = MongoConnection::connect()->{app('mongo.db')};
         $token = $this->getToken($collection->login);
         $options = $this->getSamanTransactionOptions($data, $token);
         $expire = microtime(true) + 4;
@@ -29,7 +29,7 @@ class SamanTransactionCallback extends AbstractCallback {
                 $options['json']['trackerId'] = Uuid::uuid4()->toString();
                 $res = (new Guzzle())->request(
                     'POST',
-                    env('SAMAN_NORMAL_TRANSACTION_URL'),
+                    app('saman.normal_transfer'),
                     $options
                 );
                 break;

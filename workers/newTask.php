@@ -9,7 +9,7 @@ $i = 0;
 $test = Task::connect();
 
 while (true) {
-    $test->channel()->queue($config['rabbit_queues']['order'])->basic_publish(
+    $test->channel()->queue(app('queue.order'))->basic_publish(
         new Job(
             'export_excel',
             [

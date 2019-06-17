@@ -22,10 +22,10 @@ class MongoConnection extends AbstractSingleton {
         return static::get(function() {
             return new Client(sprintf(
                 'mongodb://%1$s:%2$s@%3$s:%4$s',
-                env('mongo_user', 'mongo'),
-                env('mongo_pass', 'mongo'),
-                env('mongo_host', 'mongo'),
-                env('mongo_port', 'mongo')
+                app('mongo.user'),
+                app('mongo.pass'),
+                app('mongo.host'),
+                app('mongo.port')
             ));
         })->mongoConnection;
     }

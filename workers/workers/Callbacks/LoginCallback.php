@@ -12,7 +12,7 @@ use Workers\Extras\Logger;
 
 class LoginCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
-        $collection = MongoConnection::connect()->{env('MONGO_DB', 'test')}->login;
+        $collection = MongoConnection::connect()->{app('mongo.db')}->login;
         $time = $collection->find([],
             [
                 'sort' => [
@@ -56,10 +56,10 @@ class LoginCallback extends AbstractCallback {
                     'Accept' => 'application/json'
                 ],
                 'json' => [
-                    "channel" => env("SAMAN_LOGIN_CHANNEL"),
-                    "password" => env("SAMAN_LOGIN_PASSWORD"),
-                    "secretkey" => env("SAMAN_LOGIN_SECRETKEY"),
-                    "username" => env("SAMAN_LOGIN_USERNAME")
+                    "channel" => app('saman.login.channel'),
+                    "password" => app('saman.login.pass'),
+                    "secretkey" => app('saman.login.secret_key'),
+                    "username" => app('saman.login.user')
                 ]
             ]
         );

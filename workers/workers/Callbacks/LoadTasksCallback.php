@@ -13,7 +13,7 @@ use Workers\Job;
 class LoadTasksCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $task       = Task::connect();
-        $collection = MongoConnection::connect()->{env('MONGO_DB', 'test')}->transactionDocuments;
+        $collection = MongoConnection::connect()->{app('mongo.db')}->transactionDocuments;
         $date     = (string) (new Timer())->format('Y-m-d');
         $data       = $collection->find(['date' => $date]);
 

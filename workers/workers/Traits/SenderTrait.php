@@ -18,7 +18,7 @@ trait SenderTrait
                 "channel" => $data["channel"],
                 "cif" => $data["cif"],
                 "clientIp" => $data["clientIp"],
-                "destinationComment" => $data["destinationComment"],
+                "destinationComment" => $data["tafzil"],
                 "destinationDeposit" => $data["destinationDeposit"],
                 "referenceNumber" => $data["referenceNumber"],
                 "sourceComment" => $data["sourceComment"],
@@ -50,7 +50,7 @@ trait SenderTrait
                 "RPID" => (string) preg_match('/^60/', $data['tafzil']) ? 101102 : 101101,
                 "DetailCode1" =>  (int) $data['tafzil'],
                 "Price" => (int) isset($data['amount']) ? $data['amount'] : $data['Amount'],
-                "RowDesc" => 'پرداخت آنلاین توسط سایت'
+                "RowDesc" => $data['phone']
             ]]
         ];
 

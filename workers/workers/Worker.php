@@ -12,8 +12,10 @@ class Worker extends AbstractWorker {
         return $this->callback(function ($msg) {
             $callback = $this->getJobName($msg);
             try {
-                if ((new Timer())->check()) {
+                if ((new Timer())->check() && empty(getArgv('block'))) {
                     (new $callback)($msg);
+
+                    $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
                 } else {
                     throw new \Exception('UnTime Task Exception');
                 }
@@ -29,7 +31,6 @@ class Worker extends AbstractWorker {
 //                        'code' => $e->getCode() ? $e->getCode() : 'NULL',
 //                    ]));
             }
-            $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
         });
     }
 }

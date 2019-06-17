@@ -12,14 +12,13 @@ class Timer extends DateTime {
 
     public function check($startTime = NULL, $stopTime = NULL) {
         $log = new Debug('terminalLog');
-        $core = new Core();
 
         try {
             $this->startTime = $startTime === NULL ?
-                strtotime($core->getParam('start')) :
+                strtotime(Core::getParam('start')) :
                 $startTime;
             $this->stopTime  = $stopTime === NULL ?
-                strtotime($core->getParam('stop')) :
+                strtotime(Core::getParam('stop')) :
                 $stopTime;
         } catch (\Throwable $e) {
 //            Logger::info('No Start or Stop time is set.');

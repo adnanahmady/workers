@@ -12,12 +12,11 @@ class AMQPConnection  extends AbstractSingleton {
     public static function connect() {
         if (static::$connection === NULL) {
             static::$connection = new static;
-            global $config;
             static::$connection->amqp = new AMQPStreamConnection(
-                $config['rabbit_host'], 
-                $config['rabbit_port'], 
-                $config['rabbit_user'], 
-                $config['rabbit_pass']
+                app('rabbit_host'),
+                app('rabbit_port'),
+                app('rabbit_user'),
+                app('rabbit_pass')
             );
         }
 

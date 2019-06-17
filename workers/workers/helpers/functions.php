@@ -7,6 +7,19 @@ function env($environment, $default = '') {
     return $condition ? $getenv : $default;
 }
 
+function app($path, $default = '') {
+    $app = Workers\Core\Core::getConfig();
+    $path = explode('.', strtolower($path));
+    foreach($path as $index) {
+        try {
+            $app = $app[$index];
+        } catch (\Throwable $e) {
+            return $default;
+        }
+    }
+
+    return $app;
+}
 /**
  * @return mixed
  * @throws Exception
@@ -54,7 +67,7 @@ function getArgv($name) {
         array_values(preg_grep('/^' . $name . ':(\w+)/i', $argv))[0]
     );
     array_shift($newName);
-    $queue_name = implode(':', $newName);
+    $argName = implode(':', $newName);
 
-    return $queue_name;
+    return $argName;
 }

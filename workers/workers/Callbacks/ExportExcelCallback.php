@@ -38,7 +38,7 @@ class ExportExcelCallback extends AbstractCallback {
 
         $date           = (new Timer())->format('Y-m-d');
         $connection = MongoConnection::connect();
-        $db = $connection->{env('MONGO_DB', 'test')};
+        $db = $connection->{app('mongo.db')};
         $collection = $db->transactionDocuments;
         for ($row = 2; $row <= $highestRow; $row ++) {
             $KEY = [];

@@ -18,7 +18,7 @@ while(true) {
     }
     if (($timer)->check()) {
         $mongo = \Workers\Core\MongoConnection::connect();
-        $collection = $mongo->{env('MONGO_DB', 'test')}->login;
+        $collection = $mongo->{app('mongo.db')}->login;
         $time = $collection->find([], ['sort' => ['_id' => -1], 'limit' => 1, 'projection' => [
             'expiration' => 1,
             '_id' => 0
@@ -27,16 +27,16 @@ while(true) {
 
         if (($timer)->greaterThan($time . " - 3 Minute")) {
 //            Logger::debug('is greater than', $time);
-            $res = (new Guzzle())->request('POST', env('SAMAN_LOGIN_URL'), [
+            $res = (new Guzzle())->request('POST', app('saman.login.url'), [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
                 ],
                 'json' => [
-	                    "channel" => env('SAMAN_LOGIN_CHANNEL'),
-	                    "password" => env('SAMAN_LOGIN_PASSWORD'),
-	                    "secretkey" => env('SAMAN_LOGIN_SECRETKEY'),
-	                    "username" => env('SAMAN_LOGIN_USERNAME')
+	                    "channel" => app('saman.login.channel'),
+	                    "password" => app('saman.login.pass'),
+	                    "secretkey" => app('saman.login.secret_key'),
+	                    "username" => app('saman.login.user')
                 ]
             ]);
             $content = json_decode($res->getBody()->getContents(), true);

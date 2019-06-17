@@ -17,9 +17,10 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
         if (empty($data["referenceNumber"])) return $msg;
-        $collection = MongoConnection::connect()->{env('MONGO_DB', 'test')};
+        $collection = MongoConnection::connect()->{app('mongo.db')};
         $options['json'] = $this->getRecPay($data, function ($data) {
-            $data['CheqNo'] = Uuid::uuid4()->toString();
+            $data['CheqNo'] = substr(str_replace('-', '', Uuid::uuid4()->toString()), 15);
+
             return $data;
         });
         $expire = microtime(true) + 4;
@@ -30,7 +31,7 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
                 $options['json']['RequestId'] = Uuid::uuid4()->toString();
                 $res = (new Guzzle())->request(
                     'POST',
-                    env('ACCOUNTING_PLAN_ENDPOINT') . 'RecPay',
+                    app('accounting_plan.recpay'),
                     $options
                 );
 
@@ -55,6 +56,7 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
                         'file' => $e->getFile() ? $e->getFile() : 'NULL',
                         'line' => $e->getLine() ? $e->getLine() : 'NULL',
                         'code' => $e->getCode() ? $e->getCode() : 'NULL',
+                        'stackTrace' => $e->getTraceAsString() ? $e->getTraceAsString() : 'NULL',
                     ])
                 );
             }
