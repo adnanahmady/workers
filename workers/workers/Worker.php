@@ -12,6 +12,13 @@ class Worker extends AbstractWorker {
         return $this->callback(function ($msg) {
             $callback = $this->getJobName($msg);
             try {
+                if (getArgv('time') === 'block') {
+                    $wait = (time() - (strtotime(getArgv('start') . ' +1 day')));
+                    echo $wait . PHP_EOL;
+                    if ($wait < 0) {
+                        sleep($wait * -1);
+                    }
+                }
                 if ((new Timer())->check()) {
                     (new $callback)($msg);
                 } else {
