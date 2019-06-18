@@ -16,7 +16,11 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
 
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
-        if (empty($data["referenceNumber"])) return $msg;
+        if (empty($data["referenceNumber"])) {
+            $this->ack($msg);
+
+            return $msg;
+        }
         $collection = MongoConnection::connect()->{app('mongo.db')};
         $options['json'] = $this->getRecPay($data, function ($data) {
             $data['CheqNo'] = substr(str_replace('-', '', Uuid::uuid4()->toString()), 15);
@@ -64,6 +68,7 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
             sleep(0.5);
         }
 
+        $this->ack($msg);
         return $msg;
     }
 }

@@ -100,9 +100,10 @@ class ExportExcelCallback extends AbstractCallback {
         Task::
         connect()->
         channel()->
-        queue($GLOBALS['config']['rabbit_queues']['priority'])->
+        queue(app('queue.priority'))->
         basic_publish(new Job('load_tasks'));
 
+        $this->ack($msg);
         return $msg;
     }
 }

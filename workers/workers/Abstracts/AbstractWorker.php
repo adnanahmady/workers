@@ -11,10 +11,10 @@ abstract class AbstractWorker {
     private $message;
     private $callback;
     private $channel;
+    const WAIT_BEFORE_RECONNECT_US = 1;
 
     public static function connect() {
         if (static::$worker === NULL) {
-            set_time_limit(0);
             static::$worker = new static;
             static::$worker->connection = AMQPConnection::connect()->amqp;
         }
@@ -25,17 +25,17 @@ abstract class AbstractWorker {
     public function channel() {
         if ($this->channel === NULL) {
             $this->channel = static::$worker->connection->channel();
+            $this->channel->basic_qos(null, 1, null);
         }
 
         return $this;
     }
 
-    public function consume($queue) {
+    public function consume($queue, $message = '') {
         $this->channel->queue_declare($queue, false, true, false,false);
         // change forth parameter to true for disable acknowledgement ability
         $this->channel->basic_consume($queue, '', false, false, false, false, $this->callback);
-        $this->channel->basic_qos(null, 1, null);
-        $this->message = " [*] worker is run and its waiting for messages. to cancel press CTRL+C" . PHP_EOL;
+        $this->message = $message . PHP_EOL;
 
         return $this;
     }
@@ -70,7 +70,6 @@ abstract class AbstractWorker {
         AMQPConnection::connect()->close();
         static::$worker = NULL;
     }
-
 
     protected function __construct() {}
     private function __clone() {}

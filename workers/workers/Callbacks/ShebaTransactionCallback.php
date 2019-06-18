@@ -51,7 +51,7 @@ class ShebaTransactionCallback extends AbstractCallback {
 //                Logger::critical(($e->getResponse()->getBody()->getContents()));
                 if ($e->getCode() == '403'):
                     $this->sendTask(
-                        $GLOBALS['config']['rabbit_queues']['priority'],
+                        app('queue.priority'),
                         'login'
                     );
                 else:
@@ -87,6 +87,7 @@ class ShebaTransactionCallback extends AbstractCallback {
             ['upsert' => true]
         );
 //        Logger::info('data upserted', $result->getUpsertedCount());
+        $this->ack($msg);
 
         return $msg;
     }
@@ -120,7 +121,7 @@ class ShebaTransactionCallback extends AbstractCallback {
 
             if ($expiration == NULL || (new Timer())->greaterThan($expiration . ' - 3 Minute')) {
                 $this->sendTask(
-                    $GLOBALS['config']['rabbit_queues']['priority'],
+                    app('queue.priority'),
                     'login'
                 );
             }

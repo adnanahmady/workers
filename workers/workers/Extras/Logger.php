@@ -9,8 +9,7 @@ class Logger {
     public static function __callStatic($name, $arguments) {
         if (static::$logger === NULL) {
             static::$logger = new static;
-
-            static::$logger->debug = new Debug(app('logName'), app('logType'));
+            static::$logger->debug = new Debug(app('log.name'), app('log.type'));
         }
 
         return static::$logger->debug->$name(static::cleanAgrs($arguments));

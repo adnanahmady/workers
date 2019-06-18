@@ -11,7 +11,22 @@ class Core {
     public static function getConfig()
     {
         if (static::$config === null) {
-            static::$config = require_once dirname(__DIR__) . '/config/config.php';
+            $path = dirname(__DIR__) . '/config/';
+            $dir = scandir($path);
+            unset($dir[0], $dir[1]);
+            $config = [];
+            foreach($dir as $file) {
+                foreach((include "{$path}{$file}") as $key => $value) {
+                    $lowerKey = strtolower($key);
+                    if (isset ($config[$lowerKey])) {
+                        $config[$lowerKey] += $value;
+                    } else {
+                        $config[$lowerKey] = $value;
+                    }
+                }
+            }
+
+            static::$config = $config;
         }
 
         return static::$config;

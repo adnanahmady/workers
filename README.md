@@ -7,7 +7,7 @@ this command runs php worker and tell the worker to listen to `myqueue` and sub 
 now your worker is listening to rabbitmq, see if there is some work at the queue and take it.
  
 ## Sub queue types
-there is four default types of sub queues `priority, order, success, fails`.
+there are four default types of sub queues `priority, order, success, fails`.
 
     # hightest order
     priority 
@@ -18,9 +18,9 @@ there is four default types of sub queues `priority, order, success, fails`.
     # if there is need to put failed operations on rabbit current queue
     fails
     
-sub queues seperate of queue with `.` sign like `myqueue.order` .
+sub queues get separate of queue with `.` sign like `myqueue.order` .
 
-but if you have some other one in your mind, 
+but if you have some other things in your mind, 
 with this command you can tell worker to listen to that one like:
 
     php listen queue:myqueue sub:mysubqueue

@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'saman'         => [
+    'saman' => [
         'login' => [
             'channel' => env('SAMAN_LOGIN_CHANNEL'),
             'user' => env('SAMAN_LOGIN_USERNAME'),

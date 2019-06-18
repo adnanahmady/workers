@@ -2,6 +2,7 @@
 
 namespace Workers\Callbacks;
 
+use GuzzleHttp\Exception\GuzzleException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Workers\Abstracts\AbstractCallback;
 use Workers\Core\MongoConnection;
@@ -34,10 +35,15 @@ class LoginCallback extends AbstractCallback {
                 throw new \Exception('Login Exception');
             }
         } catch (\Throwable $e) {
-            $result = $this->login($collection);
+            try {
+                $result = $this->login($collection);
+
+            } catch (GuzzleException $e) {
+            }
 
 //            Logger::debug('login succeed', $result->getInsertedCount());
         }
+        $this->ack($msg);
 
         return $msg;
     }

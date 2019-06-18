@@ -3,5 +3,24 @@
 require_once __DIR__ . '/workers/bootstrap.php';
 
 use Workers\Worker;
+use PhpAmqpLib\Exception\AMQPRuntimeException;
+use Workers\Extras\Logger;
 
-Worker::connect()->channel()->consume($queue)->run();
+while(true) {
+    $connect = Worker::connect();
+    try {
+        $connect->channel()->consume($queue)->run();
+    } catch (AMQPRuntimeException $e) {
+        Logger::emergency('RABBITMQ CONNECTION CLOSED UNEXPECTEDLY', $e->getMessage());
+        $connect->close();
+        usleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (\RuntimeException $e) {
+        Logger::emergency('RABBITMQ CONNECTION CLOSED UNEXPECTEDLY', $e->getMessage());
+        $connect->close();
+        usleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (\ErrorException $e) {
+        Logger::emergency('RABBITMQ CONNECTION CLOSED UNEXPECTEDLY', $e->getMessage());
+        $connect->close();
+        usleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    }
+}

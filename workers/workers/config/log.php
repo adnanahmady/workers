@@ -1,9 +1,11 @@
 <?php
 
 return [
-  'logName' => env('LOG_NAME', 'terminalLog'),
-    /**
-     * terminal, file
-     */
-  'logType' => env('LOG_TYPE', 'file'),
+    'log' => [
+        'name' => env('LOG_NAME', 'terminalLog'),
+        /**
+         * terminal, file
+         */
+        'type' => env('LOG_TYPE', 'file'),
+    ]
 ];

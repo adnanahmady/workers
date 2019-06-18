@@ -20,12 +20,15 @@ class LoadTasksCallback extends AbstractCallback {
         foreach($data as $row) {
             $bankType = $row['bank_type'];
             unset($row['bank_type']);
+
             $task->
             channel()->
-            queue($GLOBALS['config']['rabbit_queues']['order'])->
+            queue(app('queue.order'))->
             basic_publish(new Job($bankType, $row));
         }
 //        Logger::debug('load from database and send to rabbit finished');
+        $this->ack($msg);
+
         return $msg;
     }
 }

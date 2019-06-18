@@ -18,15 +18,20 @@ class MongoConnection extends AbstractSingleton {
         return static::$connection;
     }
 
-    public static function connect() {
-        return static::get(function() {
+    public static function connect($connection = 'mongo') {
+        return static::get(function() use ($connection) {
             return new Client(sprintf(
                 'mongodb://%1$s:%2$s@%3$s:%4$s',
-                app('mongo.user'),
-                app('mongo.pass'),
-                app('mongo.host'),
-                app('mongo.port')
+                app("$connection.user"),
+                app("$connection.pass"),
+                app("$connection.host"),
+                app("$connection.port")
             ));
         })->mongoConnection;
+    }
+
+    public function __call($name, $arguments)
+    {
+        call_user_func_array(static::$connection->$name, $arguments);
     }
 }

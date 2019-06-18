@@ -12,25 +12,24 @@ class Worker extends AbstractWorker {
         return $this->callback(function ($msg) {
             $callback = $this->getJobName($msg);
             try {
-                if ((new Timer())->check() && empty(getArgv('block'))) {
+                if ((new Timer())->check()) {
                     (new $callback)($msg);
-
-                    $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
                 } else {
                     throw new \Exception('UnTime Task Exception');
                 }
             } catch (\Throwable $e) {
-//                Logger::alert(
-//                    Job::getJobName($msg),
-//                    json_encode(Job::getJobData($msg)),
-//                    [],
-//                    json_encode([
-//                        'message' => $e->getMessage() ? $e->getMessage() : 'NULL',
-//                        'file' => $e->getFile() ? $e->getFile() : 'NULL',
-//                        'line' => $e->getLine() ? $e->getLine() : 'NULL',
-//                        'code' => $e->getCode() ? $e->getCode() : 'NULL',
-//                    ]));
+                Logger::alert(
+                    Job::getJobName($msg),
+                    json_encode(Job::getJobData($msg)),
+                    [],
+                    json_encode([
+                        'message' => $e->getMessage() ? $e->getMessage() : 'NULL',
+                        'file' => $e->getFile() ? $e->getFile() : 'NULL',
+                        'line' => $e->getLine() ? $e->getLine() : 'NULL',
+                        'code' => $e->getCode() ? $e->getCode() : 'NULL',
+                    ]));
             }
+
         });
     }
 }
