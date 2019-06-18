@@ -64,6 +64,10 @@ abstract class AbstractWorker {
         return $this->message;
     }
 
+    public function ack(&$msg) {
+        $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
+    }
+
     public function close() {
         $this->channel->close();
         $this->connection->close();

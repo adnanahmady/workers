@@ -10,16 +10,15 @@ class Timer extends DateTime {
     private $startTime;
     private $stopTime;
 
-    public function check($startTime = NULL, $stopTime = NULL) {
-        $log = new Debug('terminalLog');
-
+    public function check($start = NULL, $stop = NULL) {
         try {
-            $this->startTime = $startTime === NULL ?
-                strtotime(Core::getParam('start')) :
-                $startTime;
-            $this->stopTime  = $stopTime === NULL ?
-                strtotime(Core::getParam('stop')) :
-                $stopTime;
+            if ($start === NULL || $stop === NULL) {
+                $start = getParam('start');
+                $stop = getParam('stop');
+            }
+            $check = strtotime($start) - strtotime($stop);
+            $this->startTime = strtotime($start);
+            $this->stopTime =  ($check > 0 ? strtotime($stop . ' +1 day') : $check);
         } catch (\Throwable $e) {
 //            Logger::info('No Start or Stop time is set.');
 

@@ -14,16 +14,18 @@ class Worker extends AbstractWorker {
             try {
                 if (getArgv('time') === 'block') {
                     $wait = (time() - (strtotime(getArgv('start') . ' +1 day')));
-                    echo $wait . PHP_EOL;
+
                     if ($wait < 0) {
                         sleep($wait * -1);
                     }
                 }
-                if ((new Timer())->check()) {
-                    (new $callback)($msg);
-                } else {
+
+                if (! (new Timer())->check()) {
+                    $this->ack($msg);
                     throw new \Exception('UnTime Task Exception');
                 }
+
+                (new $callback)($msg);
             } catch (\Throwable $e) {
                 Logger::alert(
                     Job::getJobName($msg),

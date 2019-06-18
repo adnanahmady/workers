@@ -15,8 +15,4 @@ abstract class AbstractCallback implements CallbackInterface {
             new Job($job, $data, $success, $fails)
         );
     }
-
-    public function ack(&$msg) {
-        $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
-    }
 }
