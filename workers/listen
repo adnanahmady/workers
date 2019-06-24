@@ -4,23 +4,38 @@ require_once __DIR__ . '/workers/bootstrap.php';
 
 use Workers\Worker;
 use PhpAmqpLib\Exception\AMQPRuntimeException;
+use PhpAmqpLib\Exception\AMQPIOException;
+use PhpAmqpLib\Exception\AMQPIOWaitException;
 use Workers\Extras\Logger;
 
 while(true) {
-    $connect = Worker::connect();
+    try {
+        $connect = Worker::connect();
+    } catch (AMQPIOException $e) {
+        Logger::emergency('RabbitMQ couldn\'t connect to rabbit server', $e->getCode());
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (AMQPIOWaitException $e) {
+        Logger::emergency('RabbitMQ did wait for too long to connect', $e->getCode());
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    }
+
     try {
         $connect->channel()->consume($queue)->run();
     } catch (AMQPRuntimeException $e) {
-        Logger::emergency('RABBITMQ CONNECTION CLOSED UNEXPECTEDLY', $e->getMessage());
+        Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
         $connect->close();
-        usleep(Worker::WAIT_BEFORE_RECONNECT_US);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (\RuntimeException $e) {
-        Logger::emergency('RABBITMQ CONNECTION CLOSED UNEXPECTEDLY', $e->getMessage());
+        Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
         $connect->close();
-        usleep(Worker::WAIT_BEFORE_RECONNECT_US);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (\ErrorException $e) {
-        Logger::emergency('RABBITMQ CONNECTION CLOSED UNEXPECTEDLY', $e->getMessage());
+        Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
         $connect->close();
-        usleep(Worker::WAIT_BEFORE_RECONNECT_US);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (\Throwable $e) {
+        Logger::emergency('FATAL ERROR',
+            "message ({$e->getMessage()}) file ({$e->getFile()}) line ({$e->getLine()})");
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     }
 }
