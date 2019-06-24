@@ -5,11 +5,12 @@ namespace Workers\Callbacks;
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
 use Workers\Abstracts\AbstractCallback;
-use Workers\Core\MongoConnection;
+use Workers\Core\Connection;
 use Workers\Extras\Logger;
 use GuzzleHttp\Client as Guzzle;
 use Workers\Extras\Timer;
 use Workers\Job;
+use Workers\Models\TransactionDocument;
 use Workers\Traits\SenderTrait;
 
 class SamanTransactionCallback extends AbstractCallback {
@@ -17,9 +18,8 @@ class SamanTransactionCallback extends AbstractCallback {
 
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
-//        if (! empty($data["referenceNumber"])) return $msg;
-        $collection = MongoConnection::connect()->{app('mongo.db')};
-        $token = $this->getToken($collection->login);
+        if (! empty($data["referenceNumber"])) return $msg;
+        $token = $this->getToken();
         $options = $this->getSamanTransactionOptions($data, $token);
         $expire = microtime(true) + 4;
         Logger::debug('SUPERMAN JOB', json_encode(Job::getJobData($msg),
@@ -40,13 +40,15 @@ class SamanTransactionCallback extends AbstractCallback {
                 $content['date(shamsi)'] = jdate(time())->format('Y-m-d');
                 $content['Time(API)'] = (new Timer())->format('H:i:s');
                 $content['trackerId'] = $options['json']['trackerId'];
-                $result = $collection->transactionDocuments->updateOne(
+                $result = TransactionDocument::updateOne(
                     ['_id' => $data['_id']],
                     ['$set' => $content],
                     ['upsert' => true]
                 );
 //        Logger::info('data upserted', $result->getUpsertedCount());
-                $mongo2 = MongoConnection::connect('mongo2')->{app('mongo2.db')};
+                $hamyar = Connection::connect('hamyar')->{app('hamyar.db')};
+                echo var_dump($hamyar->listCollections());
+
 
 
 
@@ -84,105 +86,15 @@ class SamanTransactionCallback extends AbstractCallback {
             sleep(0.5);
         }
 
-//        sleep(120);
+//        sleep(30);
         $this->ack($msg);
 
         return $msg;
     }
 
-    /**
-     * Get passengers wallet amount
-     *
-     * @param $args
-     * @return int
-     * @throws Exception
-     */
-    public function getPassengerAmount($mongo_db, $args)
-    {
-        $options = [
-            'projection' => ['wallet_amount' => 1, '_id' => 1]
-        ];
-        $res = $mongo_db->find('passengers', array("_id" => (int) $args['userid']), $options);
-
-        return (!empty($res)) ? $res[0]['wallet_amount'] : 0;
-    }
-
-    /**
-     * Get drivers wallet amount
-     *
-     * @param $args
-     * @return int
-     */
-    public function getDriverAmount($mongo_db, $args)
-    {
-        $options = [
-            'projection' => ['registered_driver_wallet' => 1]
-        ];
-        $res = $mongo_db->find('driver_referral_list', array("registered_driver_id" => (int) $args['userid']), $options);
-
-        return (!empty($res)) ? $res[0]['registered_driver_wallet'] : 0;
-    }
-
-    /**
-     * Update passengers wallet amount
-     *
-     * @param $args
-     * @return bool
-     * @throws Exception
-     */
-    public function updatePassengerWallet($mongo_db, $args) {
-        $passengerAmount = $this->getPassengerAmount($mongo_db, $args);
-        $args['amount'] = $passengerAmount + $args['amount'];
-        $result = $mongo_db->updateOne('passengers',
-            array(
-                '_id' => (int) $args['userid']
-            ),
-            array(
-                '$set' => array('wallet_amount' => $args['amount'])
-            ),
-            array(
-                'upsert' => false
-            )
-        );
-
-        if ($result) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Update drivers Wallet amount
-     *
-     * @param $args
-     * @return int
-     */
-    public function updateDriverWallet($mongo_db, $args) {
-        $driverAmount = $this->getDriverAmount($mongo_db, $args);
-        $args['amount'] = $driverAmount + $args['amount'];
-        $result = $mongo_db->updateOne('driver_driverinfo',
-            array(
-                'registered_driver_id' => (int) $args['userid']
-            ),
-            array(
-                '$set' => array('registered_driver_wallet' => $args['amount'])
-            ),
-            array(
-                'upsert' => false
-            )
-        );
-
-        if ($result) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public function getToken(\MongoDB\Collection $collection) {
+    public function getToken() {
         do {
-            $token = $collection->find(
+            $token = Login::find(
                 [], [
                       'sort' => ['_id' => - 1],
                       'limit' => 1,
@@ -199,7 +111,7 @@ class SamanTransactionCallback extends AbstractCallback {
                 $expiration = ($value['expiration']);
             }
 
-            if ($expiration == NULL || (new Timer())->greaterThan($expiration . ' - 3 Minute')) {
+            if ($expiration == NULL || (new Timer())->lessThan($expiration . ' - 3 Minute')) {
                 $this->sendTask(
                     app('queue.priority'),
                     'login'

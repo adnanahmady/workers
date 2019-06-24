@@ -5,16 +5,13 @@ namespace Workers\Callbacks;
 use GuzzleHttp\Exception\GuzzleException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Workers\Abstracts\AbstractCallback;
-use Workers\Core\MongoConnection;
 use Workers\Extras\Timer;
 use GuzzleHttp\Client as Guzzle;
-use MongoDB\Client as Mongo;
-use Workers\Extras\Logger;
+use Workers\Models\Login;
 
 class LoginCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
-        $collection = MongoConnection::connect()->{app('mongo.db')}->login;
-        $time = $collection->find([],
+        $time = Login::find([],
             [
                 'sort' => [
                     '_id' => -1
@@ -30,14 +27,13 @@ class LoginCallback extends AbstractCallback {
 
         try {
             if (
-                (new Timer())->greaterThan($expiration . " - 3 Minute")
+                (new Timer())->lessThan($expiration . " - 3 Minute")
             ) {
                 throw new \Exception('Login Exception');
             }
         } catch (\Throwable $e) {
             try {
-                $result = $this->login($collection);
-
+                $result = $this->login();
             } catch (GuzzleException $e) {
             }
 
@@ -49,12 +45,11 @@ class LoginCallback extends AbstractCallback {
     }
 
     /**
-     * @param \MongoDB\Collection $collection
      *
      * @return \MongoDB\InsertOneResult
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function login(\MongoDB\Collection $collection) {
+    public function login() {
         $res     = (new Guzzle())->request(
             'POST', 'https://kook.sb24.com:9000/login', [
                 'headers' => [
@@ -70,7 +65,7 @@ class LoginCallback extends AbstractCallback {
             ]
         );
         $content = json_decode($res->getBody()->getContents(), TRUE);
-        $result  = $collection->insertOne($content);
+        $result  = Login::insertOne($content);
 
         return $result;
 }
