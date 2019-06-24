@@ -31,6 +31,10 @@ abstract class AbstractWorker {
         return $this;
     }
 
+    public function isConnected() {
+        return $this->connection !== NULL;
+    }
+
     public function consume($queue, $message = '') {
         $this->channel->queue_declare($queue, false, true, false,false);
         // change forth parameter to true for disable acknowledgement ability
@@ -73,6 +77,22 @@ abstract class AbstractWorker {
         $this->connection->close();
         AMQPConnection::connect()->close();
         static::$worker = NULL;
+    }
+
+    public function checkBlock()
+    {
+        if (getArgv('time') === 'block' && !(new Timer())->check()) {
+            $start = getArgv('start');
+            $time = time();
+            $startTime = $time - strtotime($start);
+            $wait = $startTime > 0 ?
+                ($time - (strtotime($start . ' +1 day'))) :
+                ($startTime);
+
+            if ($startTime > 0) {
+                sleep($wait * -1);
+            }
+        }
     }
 
     protected function __construct() {}
