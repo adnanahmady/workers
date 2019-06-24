@@ -8,6 +8,8 @@ use Workers\Task;
 use Workers\Job;
 
 abstract class AbstractCallback implements CallbackInterface {
+    const WAIT_FOR_LOGIN = 3;
+
     abstract public function __invoke(AMQPMessage $msg): AMQPMessage;
 
     public function sendTask($queue, $job, $data = [], $success = [], $fails = []) {
