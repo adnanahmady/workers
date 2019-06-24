@@ -10,22 +10,32 @@ class Model {
 
     protected static $model;
 
-    /**
-     * @return mixed
-     */
-    private static function collection()
+    private function collection()
     {
-        if (static::get()->collection === null) {
-            $className = end(explode('\\', get_called_class()));
-            preg_match_all('/[A-Z][a-z]*/', $className, $matches);
-            static::get()->collection = strtolower(implode('_', current($matches)) . 's');
-        }
-
         return static::get()->collection;
+    }
+
+    private function setCollection()
+    {
+        $className = end(explode('\\', get_called_class()));
+        preg_match_all('/[A-Z][a-z]*/', $className, $matches);
+        static::get()->collection = strtolower(implode('_', current($matches)) . 's');
+    }
+
+    private function connection()
+    {
+        return static::get()->connection;
+    }
+
+    private function setConnection()
+    {
+        static::get()->connection = get_class_vars(static::class)['connection'];
     }
 
     public function __call($method, $args)
     {
+        static::setConnection();
+        static::setCollection();
         static::get()->database = static::get()->Connect();
 
         return call_user_func_array([static::get()->database, $method], $args);
@@ -33,21 +43,20 @@ class Model {
 
     public static function __callStatic($method, $args)
     {
+        static::setConnection();
+        static::setCollection();
         static::get()->database = static::get()->Connect();
 
         return call_user_func_array([static::get()->database, $method], $args);
     }
 
-    protected function Connect()
+    private function Connect()
     {
-        return Connection::connect(static::get()->connection)
-            ->{app(static::get()->connection . '.db')}
-            ->{static::collection()};
+        return Connection::connect(static::connection())
+            ->{app(static::connection() . '.db')}
+            ->{static::get()->collection()};
     }
 
-    /**
-     * @return mixed
-     */
     private static function get()
     {
         if (static::$model === null) {
