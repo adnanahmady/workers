@@ -6,9 +6,9 @@ use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
 use Workers\Abstracts\AbstractCallback;
 use Workers\Extras\Logger;
+use Workers\Models\TransactionDocument;
 use Workers\Traits\SenderTrait;
 use Workers\Job;
-use Workers\Core\MongoConnection;
 use GuzzleHttp\Client as Guzzle;
 
 class InsertToAccountingPlanCallback extends AbstractCallback {
@@ -21,7 +21,6 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
 
             return $msg;
         }
-        $collection = MongoConnection::connect()->{app('mongo.db')};
         $options['json'] = $this->getRecPay($data, function ($data) {
             $data['CheqNo'] = substr(str_replace('-', '', Uuid::uuid4()->toString()), 15);
 
@@ -43,7 +42,7 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
                 $content['sabt_dar_sanadpardaz_(ID)'] = $response['Id'];
                 $content['sabt_dar_sanadpardaz_response'] = $response;
 
-                $result = $collection->transactionDocuments->updateOne(
+                $result = TransactionDocument::updateOne(
                     ['_id' => $data['_id']],
                     ['$set' => $content],
                     ['upsert' => true]

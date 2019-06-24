@@ -5,9 +5,10 @@ namespace Workers\Callbacks;
 use PhpAmqpLib\Message\AMQPMessage;
 use Workers\Abstracts\AbstractCallback;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Workers\Core\MongoConnection;
+use Workers\Core\Connection;
 use Workers\Extras\Logger;
 use Workers\Extras\Timer;
+use Workers\Models\TransactionDocument;
 use Workers\Task;
 use Workers\Job;
 
@@ -24,9 +25,9 @@ class ExportExcelCallback extends AbstractCallback {
         try {
             file_put_contents($file, file_get_contents($inputFileName));
         } catch (\Throwable $e) {
-//            Logger::emergency($e->getMessage());
+            Logger::emergency($e->getMessage());
         }
-//        Logger::emergency($fileName);
+        Logger::emergency($fileName);
 
         $reader = IOFactory::createReader('Xlsx');
         $reader->setReadDataOnly(TRUE);
@@ -37,9 +38,7 @@ class ExportExcelCallback extends AbstractCallback {
         $highestColumn ++;
 
         $date           = (new Timer())->format('Y-m-d');
-        $connection = MongoConnection::connect();
-        $db = $connection->{app('mongo.db')};
-        $collection = $db->transactionDocuments;
+
         for ($row = 2; $row <= $highestRow; $row ++) {
             $KEY = [];
             for ($col = 'A'; $col != $highestColumn; $col ++):
@@ -83,27 +82,19 @@ class ExportExcelCallback extends AbstractCallback {
                 );
             }
 
-            $count = $collection->findOne($key);
+            $count = TransactionDocument::findOne($key);
 
             if ($count === NULL) {
                 $KEY ['created_at'] = (new Timer())->format('Y-m-d H:i:s');
-                $countDocs = $collection->countDocuments();
+                $countDocs = TransactionDocument::countDocuments();
                 $KEY['_id'] = (int) $countDocs + 1;
-                $result = ($collection->insertOne($KEY));
-//                Logger::info('data inserted', $result->getInsertedCount());
-            } else {
-//                $KEY ['updated_at'] = (new Timer())->format('Y-m-d H:i:s');
-//                $result = ($collection->updateOne(['_id' => $count['_id']], ['$set' => $KEY], ['upsert' => true]));
-//                Logger::info('data upserted', $result->getUpsertedCount());
+                $result = (TransactionDocument::insertOne($KEY));
+                Logger::info('data inserted', $result->getInsertedCount());
             }
         }
-        Task::
-        connect()->
-        channel()->
-        queue(app('queue.priority'))->
-        basic_publish(new Job('load_tasks'));
-
+        Task::connect()->channel()->queue(app('queue.priority'))->basic_publish(new Job('load_tasks'));
         $this->ack($msg);
+
         return $msg;
     }
 }
