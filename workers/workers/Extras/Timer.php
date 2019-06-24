@@ -16,27 +16,39 @@ class Timer extends DateTime {
                 $start = getParam('start');
                 $stop = getParam('stop');
             }
-            $check = strtotime($start) - strtotime($stop);
-            $this->startTime = strtotime($start);
-            $this->stopTime =  ($check > 0 ? strtotime($stop . ' +1 day') : $check);
+            $this->startTime = $start;
+            $this->stopTime =  ((strtotime($start) - strtotime($stop)) > 0 ?
+                strtotime($stop . ' +1 day') :
+                $stop);
         } catch (\Throwable $e) {
 //            Logger::info('No Start or Stop time is set.');
 
             return true;
         }
-        $currentTime = time();
 
-        if ($currentTime > $this->startTime && $currentTime < $this->stopTime) {
-//            Logger::debug('it is current time.', date('H:i:s', $currentTime));
+        if ($this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)) {
+            Logger::debug('it is current time.',
+                $this->greaterThanOrEqual($this->startTime) && $this->lessThanOrEqual($this->stopTime));
 
             return true;
         }
-//        Logger::debug('it is not current time.', date('H:i:s', $currentTime));
+        Logger::debug('it is not current time.',
+            $this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime));
 
         return false;
     }
 
-    public function greaterThan($time) {
+    public function lessThan($time) {
         return time() > strtotime($time);
+    }
+    public function greaterThanOrEqual($time) {
+        return time() <= strtotime($time);
+    }
+
+    public function greaterThan($time) {
+        return time() < strtotime($time);
+    }
+    public function lessThanOrEqual($time) {
+        return time() >= strtotime($time);
     }
 }
