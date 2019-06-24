@@ -3,7 +3,7 @@
 return [
     'mongo'         => [
         /**
-         * drivers are [mongodb, pgsql, mysql, odbc]
+         * drivers are [mongodb, pgsql, mysql, sqlsrv, odbc]
          */
         'driver' => env('MONGO_DRIVER', 'mongodb'),
         'db' => env('MONGO_DB', 'test'),
@@ -14,7 +14,7 @@ return [
     ],
     'hamyar'         => [
         /**
-         * drivers are [mongodb, pgsql, mysql, odbc]
+         * drivers are [mongodb, pgsql, mysql, sqlsrv, odbc]
          */
         'driver' => env('MONGO2_DRIVER', 'mongodb'),
         'db' => env('MONGO2_DB', 'test'),
