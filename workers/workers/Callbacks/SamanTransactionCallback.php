@@ -5,11 +5,13 @@ namespace Workers\Callbacks;
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
 use Workers\Abstracts\AbstractCallback;
-use Workers\Core\Connection;
 use Workers\Extras\Logger;
 use GuzzleHttp\Client as Guzzle;
 use Workers\Extras\Timer;
 use Workers\Job;
+use Workers\Models\DetailRelation;
+use Workers\Models\Login;
+use Workers\Models\Passenger;
 use Workers\Models\TransactionDocument;
 use Workers\Traits\SenderTrait;
 
@@ -22,12 +24,16 @@ class SamanTransactionCallback extends AbstractCallback {
         $token = $this->getToken();
         $options = $this->getSamanTransactionOptions($data, $token);
         $expire = microtime(true) + 4;
+
         Logger::debug('SUPERMAN JOB', json_encode(Job::getJobData($msg),
                 JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
 
         while(microtime(true) < $expire)
         {
             try {
+                $passenger = DetailRelation::find(['_id' => 25]);
+                echo var_dump($passenger), PHP_EOL;
+//                Passenger::updateAmount(['user_id'])
                 $options['json']['trackerId'] = Uuid::uuid4()->toString();
                 $res = (new Guzzle())->request(
                     'POST',
@@ -46,8 +52,6 @@ class SamanTransactionCallback extends AbstractCallback {
                     ['upsert' => true]
                 );
 //        Logger::info('data upserted', $result->getUpsertedCount());
-                $hamyar = Connection::connect('hamyar')->{app('hamyar.db')};
-                echo var_dump($hamyar->listCollections());
 
 
 
@@ -104,18 +108,19 @@ class SamanTransactionCallback extends AbstractCallback {
                           '_id' => 0
                       ]
                   ]
-            );
+            )->toArray();
 
             foreach ($token as $value) {
                 $token      = ($value['token']);
                 $expiration = ($value['expiration']);
             }
 
-            if ($expiration == NULL || (new Timer())->lessThan($expiration . ' - 3 Minute')) {
+            if ($expiration == NULL || (new Timer())->greaterThanOrEqual($expiration . ' - 3 Minute')) {
                 $this->sendTask(
                     app('queue.priority'),
                     'login'
                 );
+                sleep(static::WAIT_FOR_LOGIN);
             }
         } while (
             !(
