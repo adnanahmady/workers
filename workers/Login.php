@@ -17,7 +17,7 @@ while(true) {
         break;
     }
     if (($timer)->check()) {
-        $mongo = \Workers\Core\MongoConnection::connect();
+        $mongo = \Workers\Core\Connection::connect();
         $collection = $mongo->{app('mongo.db')}->login;
         $time = $collection->find([], ['sort' => ['_id' => -1], 'limit' => 1, 'projection' => [
             'expiration' => 1,
@@ -25,7 +25,7 @@ while(true) {
         ]]);
         foreach($time as $value) {$time = ($value['expiration']);}
 
-        if (($timer)->greaterThan($time . " - 3 Minute")) {
+        if (($timer)->lessThan($time . " - 3 Minute")) {
 //            Logger::debug('is greater than', $time);
             $res = (new Guzzle())->request('POST', app('saman.login.url'), [
                 'headers' => [
