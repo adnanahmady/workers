@@ -20,8 +20,8 @@ class Passenger extends Model {
         $options = [
             'projection' => ['wallet_amount' => 1, '_id' => 1]
         ];
-        $res = static::Connect()->find(array("_id" => (int) $args['user_id']), $options);
-
+        $res = static::Connect()->find(array("_id" => (int) $args['user_id']), $options)->toArray();
+echo $res[0];
         return (!empty($res)) ? $res[0]['wallet_amount'] : 0;
     }
 
@@ -32,9 +32,15 @@ class Passenger extends Model {
      * @return bool
      * @throws Exception
      */
-    public function updateWallet($args) {
+    public function updateWallet($args, $plus = false) {
         $passengerAmount = $this->getAmount($args);
-        $args['amount'] = $passengerAmount + $args['amount'];
+        $args['amount'] = (! $plus) ?
+            $passengerAmount - $args['amount'] :
+            $passengerAmount + $args['amount'];
+        if ($args['amount'] < 0) {
+            return false;
+        }
+
         $result = static::Connect()->updateOne(
             array(
                 '_id' => (int) $args['user_id']
