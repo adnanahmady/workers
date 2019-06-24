@@ -14,18 +14,27 @@ use Workers\Job;
 
 class ExportExcelCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
-        $filename      = (json_decode($msg->body))->data->filename;
+        $filename      = var_dump(Job::getJobData($msg)->filename);
         /**
          * temp on local
          */
         $inputFileName = (str_replace('localhost', 'web', $filename));
         $file           = './uploads/excels/xlsx/file.xlsx';
         makeDir($file);
+        if (empty($filename)) {
+            $this->ack($msg);
+            Logger::emergency('filename is equal to ' . $filename);
+
+            return $msg;
+        }
         $fileName = getFileName($filename);
         try {
             file_put_contents($file, file_get_contents($inputFileName));
         } catch (\Throwable $e) {
+            $this->ack($msg);
             Logger::emergency($e->getMessage());
+
+            return $msg;
         }
         Logger::emergency($fileName);
 
