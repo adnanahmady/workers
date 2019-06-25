@@ -1,6 +1,6 @@
 <?php
-namespace Workers\Models;
-use Workers\Core\Model;
+namespace Worker\Models;
+use Worker\Core\Model;
 
 class DriverReferralList extends Model {
 
@@ -8,20 +8,22 @@ class DriverReferralList extends Model {
 
     protected $collection = 'driver_referral_list';
 
+    const MIN_DRIVER_AMOUNT = 200000;
+
     /**
      * Get drivers wallet amount
      *
      * @param $args
      * @return int
      */
-    public function getAmount($args)
+    public function getAmount($filter, $usePhone = false)
     {
+        $filter = (! $usePhone) ? $filter : Driver::getDriver($filter);
+        $filter = (is_array($filter) ? $filter : ['registered_driver_id' => (int) $filter]);
         $options = [
             'projection' => ['registered_driver_wallet' => 1]
         ];
-        $res = static::Connect()
-            ->find(array("registered_driver_id" => (int) $args['user_id']), $options)
-            ->toArray();
+        $res = static::find($filter, $options)->toArray();
 
         return (!empty($res)) ? $res[0]['registered_driver_wallet'] : 0;
     }
@@ -31,16 +33,23 @@ class DriverReferralList extends Model {
      *
      * @param $args
      * @return int
+     * [phone => '9309616418'], 90000
      */
-    public function updateWallet($args) {
-        $driverAmount = static::getAmount($args);
-        $args['amount'] = $driverAmount + $args['amount'];
-        $result = static::Connect()->updateOne(
+    public function updateWallet($filter, $amount, $plus = false) {
+        $filter = Driver::getDriver($filter);
+        $filter = (is_array($filter) ? $filter : ['registered_driver_id' => (int) $filter]);
+        $driverAmount = static::getAmount($filter);
+        $amount = (! $plus) ?
+            $driverAmount - $amount :
+            $driverAmount + $amount;
+
+        if ($amount < static::MIN_DRIVER_AMOUNT) {
+            return false;
+        }
+
+        $result = static::Connect()->updateOne($filter,
             array(
-                'registered_driver_id' => (int) $args['user_id']
-            ),
-            array(
-                '$set' => array('registered_driver_wallet' => $args['amount'])
+                '$set' => array('registered_driver_wallet' => $amount)
             ),
             array(
                 'upsert' => false

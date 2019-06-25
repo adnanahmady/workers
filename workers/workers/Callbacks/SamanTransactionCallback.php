@@ -36,7 +36,7 @@ class SamanTransactionCallback extends AbstractCallback {
                 } else {
                     $accountCheck = Driver::updateWallet(['phone' => $data['phone']], $data['amount']);
                 }
-                
+
                 if (! $accountCheck) {
                     $this->ack($msg);
                     Logger::alert(
