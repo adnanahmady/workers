@@ -1,14 +1,19 @@
 <?php
-
-namespace Workers\Core;
+/**
+ * contains connection singleton class
+ *
+ * @author adnan ahmady <adnan.ahmady1394@gmail.com>
+ * @copyright 2019 Hamyaraval Corporation
+ */
+namespace Worker\Core;
 
 use MongoDB\Client;
-use Workers\Abstracts\AbstractSingleton;
-use Workers\Extras\Logger;
+use Worker\Abstracts\AbstractSingleton;
+use Worker\Extras\Logger;
 
 /**
  * Class Connection
- * @package Workers\Core
+ * @package Worker\Core
  */
 class Connection extends AbstractSingleton {
     private static $connection;
