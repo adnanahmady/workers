@@ -13,8 +13,8 @@ class Timer extends DateTime {
     public function check($start = NULL, $stop = NULL) {
         try {
             if ($start === NULL || $stop === NULL) {
-                $start = getParam('start');
-                $stop = getParam('stop');
+                $start = getParam('start', true);
+                $stop = getParam('stop', true);
             }
             $this->startTime = $start;
             $this->stopTime =  ((strtotime($start) - strtotime($stop)) > 0 ?

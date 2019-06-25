@@ -81,8 +81,8 @@ abstract class AbstractWorker {
 
     public function checkBlock()
     {
-        if (getArgv('time') === 'block' && !(new Timer())->check()) {
-            $start = getArgv('start');
+        if (getParam('time') === 'block' && !(new Timer())->check()) {
+            $start = getParam('start');
             $time = time();
             $startTime = $time - strtotime($start);
             $wait = $startTime > 0 ?
