@@ -1,11 +1,11 @@
 <?php
 
-namespace Workers\Abstracts;
+namespace Worker\Abstracts;
 
 use PhpAmqpLib\Message\AMQPMessage;
-use Workers\Casecade\CallbackInterface;
-use Workers\Task;
-use Workers\Job;
+use Worker\Casecade\CallbackInterface;
+use Worker\Task;
+use Worker\Job;
 
 abstract class AbstractCallback implements CallbackInterface {
     const WAIT_FOR_LOGIN = 3;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Workers\Abstracts;
+namespace Worker\Abstracts;
 
 abstract class AbstractSingleton {
     protected function __construct() {}

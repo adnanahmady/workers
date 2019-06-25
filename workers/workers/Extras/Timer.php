@@ -1,10 +1,10 @@
 <?php
 
-namespace Workers\Extras;
+namespace Worker\Extras;
 
 use DateTime;
-use Workers\Core\Core;
-use Workers\Extras\Logger;
+use Worker\Core\Core;
+use Worker\Extras\Logger;
 
 class Timer extends DateTime {
     private $startTime;

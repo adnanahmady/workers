@@ -1,8 +1,8 @@
 <?php
-namespace Workers;
+namespace Worker;
 
 use PhpAmqpLib\Message\AMQPMessage;
-use Workers\Core\AMQPConnection;
+use Worker\Core\AMQPConnection;
 
 class Task {
     private $connection;

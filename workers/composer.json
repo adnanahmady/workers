@@ -1,7 +1,7 @@
 {
     "autoload": {
         "psr-4": {
-            "Workers\\": "workers/"
+            "Worker\\": "workers/"
         }
     },
     "require": {
@@ -15,6 +15,9 @@
         "ramsey/uuid": "^3.8",
         "ext-mongodb": "^1.5",
         "vlucas/phpdotenv": "^3.3",
-        "ext-curl": "^7.0"
+        "ext-curl": "^7.0",
+        "dompdf/dompdf": "0.7.x@dev"
+    },
+    "require-dev": {
     }
 }

@@ -2,11 +2,11 @@
 
 require_once __DIR__ . '/workers/bootstrap.php';
 
-use Workers\Worker;
+use Worker\Worker;
 use PhpAmqpLib\Exception\AMQPRuntimeException;
 use PhpAmqpLib\Exception\AMQPIOException;
 use PhpAmqpLib\Exception\AMQPIOWaitException;
-use Workers\Extras\Logger;
+use Worker\Extras\Logger;
 
 while(true) {
     try {

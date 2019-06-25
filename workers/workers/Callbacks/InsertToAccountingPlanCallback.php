@@ -1,14 +1,14 @@
 <?php
 
-namespace Workers\Callbacks;
+namespace Worker\Callbacks;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
-use Workers\Abstracts\AbstractCallback;
-use Workers\Extras\Logger;
-use Workers\Models\TransactionDocument;
-use Workers\Traits\SenderTrait;
-use Workers\Job;
+use Worker\Abstracts\AbstractCallback;
+use Worker\Extras\Logger;
+use Worker\Models\TransactionDocument;
+use Worker\Traits\SenderTrait;
+use Worker\Job;
 use GuzzleHttp\Client as Guzzle;
 
 class InsertToAccountingPlanCallback extends AbstractCallback {

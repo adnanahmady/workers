@@ -1,13 +1,13 @@
 <?php
 
-namespace Workers\Callbacks;
+namespace Worker\Callbacks;
 
 use GuzzleHttp\Exception\GuzzleException;
 use PhpAmqpLib\Message\AMQPMessage;
-use Workers\Abstracts\AbstractCallback;
-use Workers\Extras\Timer;
+use Worker\Abstracts\AbstractCallback;
+use Worker\Extras\Timer;
 use GuzzleHttp\Client as Guzzle;
-use Workers\Models\Login;
+use Worker\Models\Login;
 
 class LoginCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {

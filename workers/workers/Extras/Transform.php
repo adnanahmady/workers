@@ -1,6 +1,6 @@
 <?php
 
-namespace Workers\Extras;
+namespace Worker\Extras;
 
 class Transform {
     private $string;
@@ -16,7 +16,7 @@ class Transform {
     }
 
     public function __toString() {
-        $file = '\\Workers\\Callbacks\\' . $this->string;
+        $file = '\\Worker\\Callbacks\\' . $this->string;
         $path = dirname(__DIR__) . '/Callbacks/' . $this->string . 'Callback.php';
 
         return ( file_exists($path) ? $file . 'Callback' : $file );

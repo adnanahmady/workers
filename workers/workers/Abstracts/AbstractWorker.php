@@ -1,9 +1,9 @@
 <?php
 
-namespace Workers\Abstracts;
+namespace Worker\Abstracts;
 
-use Workers\Extras\Transform;
-use Workers\Core\AMQPConnection;
+use Worker\Extras\Transform;
+use Worker\Core\AMQPConnection;
 
 abstract class AbstractWorker {
     protected static $worker;

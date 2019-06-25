@@ -1,19 +1,19 @@
 <?php
 
-namespace Workers\Callbacks;
+namespace Worker\Callbacks;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
-use Workers\Abstracts\AbstractCallback;
-use Workers\Extras\Logger;
+use Worker\Abstracts\AbstractCallback;
+use Worker\Extras\Logger;
 use GuzzleHttp\Client as Guzzle;
-use Workers\Extras\Timer;
-use Workers\Job;
-use Workers\Models\DetailRelation;
-use Workers\Models\Login;
-use Workers\Models\Passenger;
-use Workers\Models\TransactionDocument;
-use Workers\Traits\SenderTrait;
+use Worker\Extras\Timer;
+use Worker\Job;
+use Worker\Models\Driver;
+use Worker\Models\Login;
+use Worker\Models\Passenger;
+use Worker\Models\TransactionDocument;
+use Worker\Traits\SenderTrait;
 
 class SamanTransactionCallback extends AbstractCallback {
     use SenderTrait;
@@ -31,9 +31,26 @@ class SamanTransactionCallback extends AbstractCallback {
         while(microtime(true) < $expire)
         {
             try {
-                $passenger = DetailRelation::find(['_id' => 25]);
-                echo var_dump($passenger), PHP_EOL;
-//                Passenger::updateAmount(['user_id'])
+                if (preg_match('/70/', $data)) {
+                    $accountCheck = Passenger::updateWallet(['phone' => $data['phone']], $data['amount']);
+                } else {
+                    $accountCheck = Driver::updateWallet(['phone' => $data['phone']], $data['amount']);
+                }
+                
+                if (! $accountCheck) {
+                    $this->ack($msg);
+                    Logger::alert(
+                        Job::getJobName($msg),
+                        json_encode(Job::getJobData($msg)),
+                        json_encode([]),
+                        json_encode([
+                            'message' => 'passengers amount is not enough',
+                            'phone' => $data['phone'],
+                            'detail' => $data['tafzil'],
+                        ]));
+
+                    return $msg;
+                }
                 $options['json']['trackerId'] = Uuid::uuid4()->toString();
                 $res = (new Guzzle())->request(
                     'POST',
@@ -52,7 +69,6 @@ class SamanTransactionCallback extends AbstractCallback {
                     ['upsert' => true]
                 );
 //        Logger::info('data upserted', $result->getUpsertedCount());
-
 
 
 

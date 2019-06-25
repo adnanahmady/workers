@@ -1,8 +1,8 @@
 <?php
 
-namespace Workers\Models;
+namespace Worker\Models;
 
-use Workers\Core\Model;
+use Worker\Core\Model;
 
 class TransactionDocument extends Model
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Workers\Core;
+namespace Worker\Core;
 
 class Core {
     protected static $config;

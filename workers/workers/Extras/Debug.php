@@ -1,6 +1,6 @@
 <?php
 
-namespace Workers\Extras;
+namespace Worker\Extras;
 
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Logger;
@@ -8,7 +8,7 @@ use Monolog\Handler\StreamHandler;
 
 /**
  * Class Debug
- * @package Workers\Extras
+ * @package Worker\Extras
  */
 class Debug {
     /**

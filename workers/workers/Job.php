@@ -1,7 +1,7 @@
 <?php
-namespace Workers;
+namespace Worker;
 
-use Workers\Extras\Timer;
+use Worker\Extras\Timer;
 
 class Job {
     private $job = '';

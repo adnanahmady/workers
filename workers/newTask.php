@@ -2,8 +2,8 @@
 
 require_once __DIR__ . '/workers/bootstrap.php';
 
-use Workers\Task;
-use Workers\Job;
+use Worker\Task;
+use Worker\Job;
 
 $i = 0;
 $test = Task::connect();

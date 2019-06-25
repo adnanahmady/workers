@@ -1,17 +1,17 @@
 <?php
 
-namespace Workers\Callbacks;
+namespace Worker\Callbacks;
 
 use MongoDB\Client as Mongo;
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
-use Workers\Abstracts\AbstractCallback;
-use Workers\Core\MongoConnection;
-use Workers\Extras\Logger;
+use Worker\Abstracts\AbstractCallback;
+use Worker\Core\MongoConnection;
+use Worker\Extras\Logger;
 use GuzzleHttp\Client as Guzzle;
-use Workers\Extras\Timer;
-use Workers\Job;
-use Workers\Task;
+use Worker\Extras\Timer;
+use Worker\Job;
+use Worker\Task;
 
 class ShebaTransactionCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {

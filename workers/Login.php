@@ -2,12 +2,12 @@
 set_time_limit(0);
 date_default_timezone_set('Asia/Tehran');
 
-require_once __DIR__ . '/workers/bootstrap.php';
+require_once __DIR__ . '/wWorker/bootstrap.php';
 
-use Workers\Extras\Timer;
+use Worker\Extras\Timer;
 use MongoDB\Client as Mongo;
 use GuzzleHttp\Client as Guzzle;
-use Workers\Extras\Logger;
+use Worker\Extras\Logger;
 
 while(true) {
     try {
@@ -17,7 +17,7 @@ while(true) {
         break;
     }
     if (($timer)->check()) {
-        $mongo = \Workers\Core\Connection::connect();
+        $mongo = \Worker\Core\Connection::connect();
         $collection = $mongo->{app('mongo.db')}->login;
         $time = $collection->find([], ['sort' => ['_id' => -1], 'limit' => 1, 'projection' => [
             'expiration' => 1,

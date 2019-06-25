@@ -1,14 +1,14 @@
 <?php
 
-namespace Workers\Callbacks;
+namespace Worker\Callbacks;
 
 use PhpAmqpLib\Message\AMQPMessage;
-use Workers\Abstracts\AbstractCallback;
-use Workers\Extras\Logger;
-use Workers\Extras\Timer;
-use Workers\Models\TransactionDocument;
-use Workers\Task;
-use Workers\Job;
+use Worker\Abstracts\AbstractCallback;
+use Worker\Extras\Logger;
+use Worker\Extras\Timer;
+use Worker\Models\TransactionDocument;
+use Worker\Task;
+use Worker\Job;
 
 class LoadTasksCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {

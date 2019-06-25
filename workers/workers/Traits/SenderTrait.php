@@ -1,6 +1,6 @@
 <?php
 
-namespace Workers\Traits;
+namespace Worker\Traits;
 
 use \Morilog\Jalali\Jalalian;
 use GuzzleHttp\Client as Guzzle;

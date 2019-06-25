@@ -1,6 +1,6 @@
 <?php
 
-namespace Workers\Extras;
+namespace Worker\Extras;
 
 class Logger {
     private static $logger;
