@@ -20,19 +20,6 @@ function app($path, $default = '') {
 
     return $app;
 }
-/**
- * @return mixed
- * @throws Exception
- */
-function getParam($name) {
-    $queue_name = getArgv($name);
-
-    if (empty($queue_name)) {
-        throw new Exception($name . ' name must be set');
-    }
-
-    return $queue_name;
-}
 
 function makeDir($file) {
     $path = explode('/', $file);
@@ -54,20 +41,25 @@ function getFileName($file) {
 }
 
 /**
- * @param       $name
- * @param array $argv
+ * Gets cli key:value pares argument
  *
- * @return mixed
+ * @param $name
+ * @param bool $exception
+ * @return string
+ * @throws InvalidArgumentException
  */
-function getArgv($name) {
+function getParam($name, $exception = false) {
     global $argv;
-
     $newName = explode(
         ':',
         array_values(preg_grep('/^' . $name . ':(\w+)/i', $argv))[0]
     );
     array_shift($newName);
     $argName = implode(':', $newName);
+
+    if (empty($queue_name) && $exception === true) {
+        throw new \InvalidArgumentException($name . ' name must be set');
+    }
 
     return $argName;
 }
