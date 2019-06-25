@@ -1,5 +1,19 @@
 <?php
+/**
+ * contains global helper functions
+ *
+ * @author adnan ahmady <adnan.ahmady1394@gmail.com>
+ * @copyright 2019 Hamyaraval Corporation
+ */
 
+/**
+ * returns specified environment variable
+ * or returns default value
+ *
+ * @param $environment
+ * @param string $default
+ * @return array|string
+ */
 function env($environment, $default = '') {
     $getenv = getenv(strtoupper($environment));
     $condition = ($getenv !== false && ! empty($getenv));
@@ -7,8 +21,16 @@ function env($environment, $default = '') {
     return $condition ? $getenv : $default;
 }
 
+/**
+ * returns specified configuration field
+ * if not exist returns default value
+ *
+ * @param $path
+ * @param string $default
+ * @return mixed|string
+ */
 function app($path, $default = '') {
-    $app = Workers\Core\Core::getConfig();
+    $app = Worker\Core\Core::getConfig();
     $path = explode('.', strtolower($path));
     foreach($path as $index) {
         try {
@@ -21,6 +43,11 @@ function app($path, $default = '') {
     return $app;
 }
 
+/**
+ * makes specified path directories
+ *
+ * @param $file
+ */
 function makeDir($file) {
     $path = explode('/', $file);
     array_pop($path);
@@ -33,6 +60,12 @@ function makeDir($file) {
     }
 }
 
+/**
+ * get downloaded excel file name from address
+ *
+ * @param $file
+ * @return mixed
+ */
 function getFileName($file) {
     $path = explode('/', $file);
     $fileName = array_shift(explode('-', array_pop($path)));
@@ -57,7 +90,7 @@ function getParam($name, $exception = false) {
     array_shift($newName);
     $argName = implode(':', $newName);
 
-    if (empty($queue_name) && $exception === true) {
+    if (empty($argName) && $exception === true) {
         throw new \InvalidArgumentException($name . ' name must be set');
     }
 
