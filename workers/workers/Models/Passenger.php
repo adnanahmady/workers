@@ -38,6 +38,8 @@ class Passenger extends Model {
      * @throws \Exception
      */
     public function updateWallet($filter, $amount, $plus = false) {
+        $filter = (is_array($filter) ? $filter : ['detail_code' => $filter]);
+        $filter = DetailRelation::getUser($filter);
         $filter = (is_array($filter) ? $filter : ['_id' => $filter]);
         $passengerAmount = static::getAmount($filter);
         $amount = (! $plus) ?
