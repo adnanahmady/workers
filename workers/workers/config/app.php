@@ -6,5 +6,8 @@
  * @copyright 2019 Hamyaraval Corporation
  */
 return [
+    /**
+     * root directory path
+     */
     'root' => dirname(__DIR__) . '/',
 ];

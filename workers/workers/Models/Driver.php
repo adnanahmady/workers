@@ -1,11 +1,27 @@
 <?php
+/**
+ * contains Driver class
+ *
+ * @author adnan ahmady <adnan.ahmady1394@gmail.com>
+ * @copyright 2019 Hamyaraval Corporation
+ */
 namespace Worker\Models;
 use Worker\Core\Model;
 
+/**
+ * Class Driver
+ *
+ * @package Worker\Models
+ */
 class Driver extends Model {
-
+    /**
+     * @var string connection name
+     */
     protected $connection = 'hamyar';
 
+    /**
+     * @var string name of the collection that model must connect to regardless models name
+     */
     protected $collection = 'people';
 
     /**
@@ -42,7 +58,7 @@ class Driver extends Model {
         ];
         $res = static::find($filter, $options)->toArray();
 
-        return (!empty($res) && isset($res[0]['_id'])) ? $res[0]['_id'] : 'no driver';
+        return (!empty($res) && isset($res[0]['_id'])) ? $res[0]['_id'] : 0;
     }
 
 }

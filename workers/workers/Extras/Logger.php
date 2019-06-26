@@ -2,6 +2,18 @@
 
 namespace Worker\Extras;
 
+/**
+ * Class Logger
+ * @package Worker\Extras
+ * @method debug
+ * @method info
+ * @method notice
+ * @method warning
+ * @method error
+ * @method critical
+ * @method alert
+ * @method emergency
+ */
 class Logger {
     private static $logger;
     private $debug;
