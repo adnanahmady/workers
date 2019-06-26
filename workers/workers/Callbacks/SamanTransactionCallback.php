@@ -5,6 +5,7 @@ namespace Worker\Callbacks;
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
 use Worker\Abstracts\AbstractCallback;
+use Worker\Exceptions\InvalidFieldException;
 use Worker\Extras\Logger;
 use GuzzleHttp\Client as Guzzle;
 use Worker\Extras\Timer;
@@ -14,27 +15,45 @@ use Worker\Models\Login;
 use Worker\Models\Passenger;
 use Worker\Models\TransactionDocument;
 use Worker\Traits\SenderTrait;
+use Worker\Worker;
 
 class SamanTransactionCallback extends AbstractCallback {
     use SenderTrait;
 
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
-        if (! empty($data["referenceNumber"])) return $msg;
+        if (! empty($data["referenceNumber"])) {
+            $this->ack($msg);
+            Logger::alert(
+                Job::getJobName($msg),
+                json_encode(Job::getJobData($msg)),
+                json_encode([]),
+                json_encode([
+                    'message' => 'referenceNumber is set already'
+                ]));
+            return $msg;
+        }
         $token = $this->getToken();
         $options = $this->getSamanTransactionOptions($data, $token);
-        $expire = microtime(true) + 4;
+        $expire = time(true) + 4;
 
-        Logger::debug('SUPERMAN JOB', json_encode(Job::getJobData($msg),
-                JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
 
-        while(microtime(true) < $expire)
+        while(time(true) < $expire)
         {
             try {
-                if (preg_match('/70/', $data)) {
-                    $accountCheck = Passenger::updateWallet(['phone' => $data['phone']], $data['amount']);
+                $data = Job::getJobData($msg);
+                Logger::debug('SUPERMAN JOB', json_encode($data,
+                    JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                if (! isset($data['tafzil'])) {
+                    throw new InvalidFieldException('tafzil not found');
+                } elseif (empty($data['tafzil'])) {
+                    throw new InvalidFieldException('tafzil is invalid');
+                }
+
+                if (preg_match('/^70/', $data['tafzil'])) {
+                    $accountCheck = Passenger::updateWallet(['detail_code' => $data['tafzil']], $data['amount']);
                 } else {
-                    $accountCheck = Driver::updateWallet(['phone' => $data['phone']], $data['amount']);
+                    $accountCheck = Driver::updateWallet(['detail_code' => $data['tafzil']], $data['amount']);
                 }
 
                 if (! $accountCheck) {
@@ -44,20 +63,20 @@ class SamanTransactionCallback extends AbstractCallback {
                         json_encode(Job::getJobData($msg)),
                         json_encode([]),
                         json_encode([
-                            'message' => 'passengers amount is not enough',
+                            'message' => 'passengers/drivers amount is not enough',
                             'phone' => $data['phone'],
                             'detail' => $data['tafzil'],
                         ]));
 
                     return $msg;
                 }
+                echo 'worker 1';
                 $options['json']['trackerId'] = Uuid::uuid4()->toString();
                 $res = (new Guzzle())->request(
                     'POST',
                     app('saman.normal_transfer'),
                     $options
                 );
-
                 $content = json_decode($res->getBody()->getContents(), true);
                 $content['Date(miladi)'] = (new Timer())->format('Y-m-d');
                 $content['date(shamsi)'] = jdate(time())->format('Y-m-d');
@@ -66,11 +85,12 @@ class SamanTransactionCallback extends AbstractCallback {
                 $result = TransactionDocument::updateOne(
                     ['_id' => $data['_id']],
                     ['$set' => $content],
-                    ['upsert' => true]
+                    ['upsert' => false]
                 );
-//        Logger::info('data upserted', $result->getUpsertedCount());
 
-
+                echo 'worker 2';
+                Logger::info('data upserted', $result->getUpsertedCount());
+//                Logger::info('data upserted', $result->getModifiedCount());
 
                 $data[] = json_decode($res->getBody()->getContents(), true);
                 $this->sendTask(
@@ -86,21 +106,33 @@ class SamanTransactionCallback extends AbstractCallback {
                         app('queue.priority'),
                         'login'
                     );
-                sleep(1);
+                    sleep(parent::WAIT_FOR_LOGIN);
                 else:
-//                    Logger::alert(
-//                        Job::getJobName($msg),
-//                        json_encode(Job::getJobData($msg)),
-//                        [],
-//                        json_encode([
-//                            'transfer_id' => $data['_id'],
-//                            'message' => $e->getMessage() ? $e->getResponse()->getBody()->getContents() : 'NULL',
-//                            'file' => $e->getFile() ? $e->getFile() : 'NULL',
-//                            'line' => $e->getLine() ? $e->getLine() : 'NULL',
-//                            'code' => $e->getCode() ? $e->getCode() : 'NULL',
-//                        ]));
+                    Logger::alert(
+                        Job::getJobName($msg),
+                        json_encode(Job::getJobData($msg)),
+                        [],
+                        json_encode([
+                            'transfer_id' => $data['_id'],
+                            'message' => $e->getMessage() ? $e->getResponse()->getBody()->getContents() : 'NULL',
+                            'file' => $e->getFile() ? $e->getFile() : 'NULL',
+                            'line' => $e->getLine() ? $e->getLine() : 'NULL',
+                            'code' => $e->getCode() ? $e->getCode() : 'NULL',
+                        ]));
                     break;
                 endif;
+            } catch (InvalidFieldException $e) {
+                Logger::alert(
+                    Job::getJobName($msg),
+                    json_encode(Job::getJobData($msg)),
+                    [],
+                    json_encode([
+                        'transfer_id' => $data['_id'],
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile() ? $e->getFile() : 'NULL',
+                        'line' => $e->getLine() ? $e->getLine() : 'NULL',
+                        'code' => $e->getCode() ? $e->getCode() : 'NULL',
+                    ]));
             }
 
             sleep(0.5);
@@ -131,7 +163,7 @@ class SamanTransactionCallback extends AbstractCallback {
                 $expiration = ($value['expiration']);
             }
 
-            if ($expiration == NULL || (new Timer())->greaterThanOrEqual($expiration . ' - 3 Minute')) {
+            if ($expiration == NULL || (new Timer())->lessThanOrEqual($expiration . ' - 3 Minute')) {
                 $this->sendTask(
                     app('queue.priority'),
                     'login'
@@ -141,7 +173,7 @@ class SamanTransactionCallback extends AbstractCallback {
         } while (
             !(
                 $expiration !== NULL &&
-                ! (new Timer())->greaterThan($expiration . ' - 3 Minute')
+                (new Timer())->greaterThanOrEqual($expiration . ' - 3 Minute')
             )
         );
 
