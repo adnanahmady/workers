@@ -2,50 +2,81 @@
 
 namespace Worker\Callbacks;
 
-use MongoDB\Client as Mongo;
 use PhpAmqpLib\Message\AMQPMessage;
 use Ramsey\Uuid\Uuid;
 use Worker\Abstracts\AbstractCallback;
-use Worker\Core\MongoConnection;
 use Worker\Extras\Logger;
 use GuzzleHttp\Client as Guzzle;
 use Worker\Extras\Timer;
 use Worker\Job;
-use Worker\Task;
+use Worker\Models\Driver;
+use Worker\Models\Login;
+use Worker\Models\Passenger;
+use Worker\Models\TransactionDocument;
+use Worker\Traits\SenderTrait;
 
 class ShebaTransactionCallback extends AbstractCallback {
+    use SenderTrait;
+
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
         if (! empty($data["referenceNumber"])) return $msg;
-        $db = MongoConnection::connect()->{app('mongo.db')};
-        $token = $this->getToken($db->login);
+        $token = $this->getToken();
+        $options = $this->getShebaTransactionOptions($data, $token);
+        $expire = microtime(true) + 4;
 
-        $options = [
-            'json' => [
-                "amount" => $data["amount"],
-                "channel" => $data["channel"],
-                "cif" => $data["cif"],
-                "clientIp" => $data["clientIp"],
-                "description" => $data["description"],
-                "factorNumber" => $data["factorNumber"],
-                "ibanNumber" => $data["ibanNumber"],
-                "ownerName" => $data["ownerName"],
-                "sourceDepositNumber" => $data["sourceDepositNumber"],
-                "token" => $token,
-                "trackerId" => $data["trackerId"],
-                "transferDescription" => $data["transferDescription"],
-            ]
-        ];
+//        Logger::debug('SUPERMAN JOB', json_encode(Job::getJobData($msg),
+//                JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
 
-        for($i = 1; $i < 4; $i ++) {
+        while(microtime(true) < $expire)
+        {
             try {
+                if (preg_match('/70/', $data)) {
+                    $accountCheck = Passenger::updateWallet(['phone' => $data['phone']], $data['amount']);
+                } else {
+                    $accountCheck = Driver::updateWallet(['phone' => $data['phone']], $data['amount']);
+                }
+
+                if (! $accountCheck) {
+                    $this->ack($msg);
+                    Logger::alert(
+                        Job::getJobName($msg),
+                        json_encode(Job::getJobData($msg)),
+                        json_encode([]),
+                        json_encode([
+                            'message' => 'passengers/drivers amount is not enough',
+                            'phone' => $data['phone'],
+                            'detail' => $data['tafzil'],
+                        ]));
+
+                    return $msg;
+                }
                 $options['json']['trackerId'] = Uuid::uuid4()->toString();
                 $res = (new Guzzle())->request(
                     'POST',
-                    'https://kook.sb24.com:9001/transfer/normal',
+                    app('saman.normal_transfer'),
                     $options
                 );
+                $content = json_decode($res->getBody()->getContents(), true);
+                $content['Date(miladi)'] = (new Timer())->format('Y-m-d');
+                $content['date(shamsi)'] = jdate(time())->format('Y-m-d');
+                $content['Time(API)'] = (new Timer())->format('H:i:s');
+                $content['trackerId'] = $options['json']['trackerId'];
+                $result = TransactionDocument::updateOne(
+                    ['_id' => $data['_id']],
+                    ['$set' => $content],
+                    ['upsert' => true]
+                );
 
+                Logger::info('data upserted', $result->getUpsertedCount());
+//                Logger::info('data upserted', $result->getModifiedCount());
+
+                $data[] = json_decode($res->getBody()->getContents(), true);
+                $this->sendTask(
+                    app('queue.order'),
+                    'insert_to_accounting_plan',
+                    $data
+                );
                 break;
             } catch (\GuzzleHttp\Exception\ClientException $e) {
 //                Logger::critical(($e->getResponse()->getBody()->getContents()));
@@ -54,6 +85,7 @@ class ShebaTransactionCallback extends AbstractCallback {
                         app('queue.priority'),
                         'login'
                     );
+                    sleep(1);
                 else:
 //                    Logger::alert(
 //                        Job::getJobName($msg),
@@ -61,7 +93,7 @@ class ShebaTransactionCallback extends AbstractCallback {
 //                        [],
 //                        json_encode([
 //                            'transfer_id' => $data['_id'],
-//                            'message' => $e->getMessage() ? $e->getMessage() : 'NULL',
+//                            'message' => $e->getMessage() ? $e->getResponse()->getBody()->getContents() : 'NULL',
 //                            'file' => $e->getFile() ? $e->getFile() : 'NULL',
 //                            'line' => $e->getLine() ? $e->getLine() : 'NULL',
 //                            'code' => $e->getCode() ? $e->getCode() : 'NULL',
@@ -69,61 +101,41 @@ class ShebaTransactionCallback extends AbstractCallback {
                     break;
                 endif;
             }
+
+            sleep(0.5);
         }
 
-        $result = json_decode($res->getBody()->getContents(), true);
-        $content['referenceId'] = $result['referenceId'];
-        $content['transferStatus'] = $result['transferStatus'];
-        $content['final_transactionStatus'] = $result['transferStatus'];
-        $content['final_transactionStatus'] = $result['transferStatus'];
-        $content['transactionStatus'] = $result['transactionStatus'];
-        $content['Date(miladi)'] = (new Timer())->format('Y-m-d');
-        $content['date(shamsi)'] = jdate(time())->format('Y-m-d');
-        $content['Time(API)'] = (new Timer())->format('H:i:s');
-        $content['trackerId'] = $options['json']['trackerId'];
-        $result = $db->transactionDocuments->updateOne(
-            ['_id' => $data['_id']],
-            ['$set' => $content],
-            ['upsert' => true]
-        );
-//        Logger::info('data upserted', $result->getUpsertedCount());
+//        sleep(30);
         $this->ack($msg);
 
         return $msg;
     }
 
-    public function sendTask($queue, $job, $data = [], $success = [], $fails = []) {
-        Task::
-        connect()->channel()->queue($queue)->basic_publish(
-            new Job($job, $data, $success, $fails)
-        );
-    }
-
-
-    public function getToken(\MongoDB\Collection $collection) {
+    public function getToken() {
         do {
-            $token = $collection->find(
+            $token = Login::find(
                 [], [
-                      'sort' => ['_id' => - 1],
-                      'limit' => 1,
-                      'projection' => [
-                          'token' => 1,
-                          'expiration' => 1,
-                          '_id' => 0
-                      ]
-                  ]
-            );
+                    'sort' => ['_id' => - 1],
+                    'limit' => 1,
+                    'projection' => [
+                        'token' => 1,
+                        'expiration' => 1,
+                        '_id' => 0
+                    ]
+                ]
+            )->toArray();
 
             foreach ($token as $value) {
                 $token      = ($value['token']);
                 $expiration = ($value['expiration']);
             }
 
-            if ($expiration == NULL || (new Timer())->greaterThan($expiration . ' - 3 Minute')) {
+            if ($expiration == NULL || (new Timer())->greaterThanOrEqual($expiration . ' - 3 Minute')) {
                 $this->sendTask(
                     app('queue.priority'),
                     'login'
                 );
+                sleep(static::WAIT_FOR_LOGIN);
             }
         } while (
             !(
