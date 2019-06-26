@@ -9,17 +9,9 @@ use PhpAmqpLib\Exception\AMQPIOWaitException;
 use Worker\Extras\Logger;
 
 while(true) {
+    $connect = null;
     try {
         $connect = Worker::connect();
-    } catch (AMQPIOException $e) {
-        Logger::emergency('RabbitMQ couldn\'t connect to rabbit server', $e->getCode());
-        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
-    } catch (AMQPIOWaitException $e) {
-        Logger::emergency('RabbitMQ did wait for too long to connect', $e->getCode());
-        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
-    }
-
-    try {
         $connect->channel()->consume($queue)->run();
     } catch (AMQPRuntimeException $e) {
         Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
@@ -32,6 +24,12 @@ while(true) {
     } catch (\ErrorException $e) {
         Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
         $connect->close();
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (AMQPIOException $e) {
+        Logger::emergency('RabbitMQ couldn\'t connect to rabbit server', $e->getCode());
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (AMQPIOWaitException $e) {
+        Logger::emergency('RabbitMQ did wait for too long to connect', $e->getCode());
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (\Throwable $e) {
         Logger::emergency('FATAL ERROR',
