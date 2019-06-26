@@ -56,6 +56,7 @@ class Worker extends AbstractWorker {
                         'file' => $e->getFile() ? $e->getFile() : 'NULL',
                         'line' => $e->getLine() ? $e->getLine() : 'NULL',
                         'code' => $e->getCode() ? $e->getCode() : 'NULL',
+                        'stackTrace' => $e->getTraceAsString() ? $e->getTraceAsString() : 'NULL',
                     ]));
             }
 
