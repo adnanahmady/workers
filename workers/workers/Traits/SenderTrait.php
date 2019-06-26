@@ -28,6 +28,25 @@ trait SenderTrait
         ];
     }
 
+    public function getShebaTransactionOptions($data, $token) {
+        return [
+            'json' => [
+                "amount" => $data["amount"],
+                "channel" => $data["channel"],
+                "cif" => $data["cif"],
+                "clientIp" => $data["clientIp"],
+                "description" => $data["description"],
+                "factorNumber" => $data["factorNumber"],
+                "ibanNumber" => $data["ibanNumber"],
+                "ownerName" => $data["ownerName"],
+                "sourceDepositNumber" => $data["sourceDepositNumber"],
+                "token" => $token,
+                "trackerId" => $data["trackerId"],
+                "transferDescription" => $data["transferDescription"],
+            ]
+        ];
+    }
+
     /**
      * Returns mixed array for send to RecPay Endpoint
      *
