@@ -5,7 +5,6 @@ namespace Worker\Callbacks;
 use PhpAmqpLib\Message\AMQPMessage;
 use Worker\Abstracts\AbstractCallback;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Worker\Core\Connection;
 use Worker\Extras\Logger;
 use Worker\Extras\Timer;
 use Worker\Models\TransactionDocument;
@@ -14,9 +13,7 @@ use Worker\Job;
 
 class ExportExcelCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
-        var_dump(Job::getJobData($msg)->filename);
-        $filename      = var_dump(Job::getJobData($msg)->filename);
-        echo '*****************************************88888', PHP_EOL, PHP_EOL;
+        $filename      = Job::getJobData($msg)['filename'];
         /**
          * temp on local
          */
