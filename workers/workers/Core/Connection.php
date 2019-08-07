@@ -28,8 +28,8 @@ class Connection extends AbstractSingleton {
     public static function get($callback) {
         if (static::$connection === NULL) {
             static::$connection = new static;
-            static::$connection->dbConnection = $callback();
         }
+        static::$connection->dbConnection = $callback();
 
         return static::$connection;
     }
@@ -38,16 +38,16 @@ class Connection extends AbstractSingleton {
         return static::get(function() use ($connection) {
             $conn = null;
 
-            switch(app("$connection.driver")) {
+            switch(config("database.$connection.driver")) {
                 case "mongodb":
                     $conn =  new Client(
                         sprintf(
                             '%1$s://%2$s:%3$s@%4$s:%5$s',
-                            app("$connection.driver"),
-                            app("$connection.user"),
-                            app("$connection.pass"),
-                            app("$connection.host"),
-                            app("$connection.port")
+                            config("database.$connection.driver"),
+                            config("database.$connection.user"),
+                            config("database.$connection.pass"),
+                            config("database.$connection.host"),
+                            config("database.$connection.port")
                         )
                     );
                     break;
@@ -58,8 +58,8 @@ class Connection extends AbstractSingleton {
                         '%1$s:host=%2$s;dbname=%3$s;port=%4$s',
                         $connection
                     ),
-                    app("$connection.user"),
-                    app("$connection.pass")
+                    config("database.$connection.user"),
+                    config("database.$connection.pass")
                 );
                 break;
                 case "sqlsrv":
@@ -68,8 +68,8 @@ class Connection extends AbstractSingleton {
                             '%1$s:Server=%2$s,%4$s;Database=%3$s',
                             $connection
                         ),
-                        app("$connection.user"),
-                        app("$connection.pass")
+                        config("database.$connection.user"),
+                        config("database.$connection.pass")
                     );
                     break;
                 case "odbc":
@@ -78,12 +78,11 @@ class Connection extends AbstractSingleton {
                             '%1$s:Driver={SQL Server};Server=%2$s,%4$s;Database=%3$s',
                             $connection
                         ),
-                        app("$connection.user"),
-                        app("$connection.pass")
+                        config("database.$connection.user"),
+                        config("database.$connection.pass")
                     );
                     break;
                 default:
-                    Logger::emergency('Specified driver for the connection is not valid.');
                     throw new \InvalidArgumentException('Specified driver for the connection is not valid.');
             }
 
@@ -105,10 +104,10 @@ class Connection extends AbstractSingleton {
     {
         return sprintf(
             $connect,
-            app("$connection.driver"),
-            app("$connection.host"),
-            app("$connection.db"),
-            app("$connection.port")
+            config("database.$connection.driver"),
+            config("database.$connection.host"),
+            config("database.$connection.db"),
+            config("database.$connection.port")
         );
     }
 }

@@ -66,7 +66,7 @@ class DriverReferralList extends Model {
             $driverAmount - $amount :
             $driverAmount + $amount;
 
-        if ($amount < static::MIN_DRIVER_AMOUNT) {
+        if ($amount < static::MIN_DRIVER_AMOUNT && ! $plus) {
             return false;
         }
 
@@ -84,5 +84,28 @@ class DriverReferralList extends Model {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Check drivers Wallet amount
+     *
+     * @param $filter
+     * @param $amount
+     * @param bool $plus
+     * @return bool
+     */
+    public function checkWallet($filter, $amount, $plus = false) {
+        $filter = DetailRelation::getUser($filter);
+        $filter = (is_array($filter) ? $filter : ['registered_driver_id' => (int) $filter]);
+        $driverAmount = static::getAmount($filter);
+        $amount = (! $plus) ?
+            $driverAmount - $amount :
+            $driverAmount + $amount;
+
+        if ($amount < static::MIN_DRIVER_AMOUNT && ! $plus) {
+            return false;
+        }
+
+        return true;
     }
 }

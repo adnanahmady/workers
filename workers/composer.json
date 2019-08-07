@@ -2,7 +2,8 @@
     "autoload": {
         "psr-4": {
             "Worker\\": "workers/"
-        }
+        },
+        "files": ["workers/helpers/functions.php"]
     },
     "require": {
         "php-amqplib/php-amqplib": "^2.9",
@@ -16,7 +17,8 @@
         "ext-mongodb": "^1.5",
         "vlucas/phpdotenv": "^3.3",
         "ext-curl": "^7.0",
-        "dompdf/dompdf": "0.7.x@dev"
+        "dompdf/dompdf": "0.7.x@dev",
+        "predis/predis": "^1.1"
     },
     "require-dev": {
     }

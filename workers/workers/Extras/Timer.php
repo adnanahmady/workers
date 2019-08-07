@@ -4,6 +4,7 @@ namespace Worker\Extras;
 
 use DateTime;
 use Worker\Core\Core;
+use Worker\Exceptions\InvalidTimeException;
 use Worker\Extras\Logger;
 
 class Timer extends DateTime {
@@ -21,19 +22,31 @@ class Timer extends DateTime {
                 strtotime($stop . ' +1 day') :
                 $stop);
         } catch (\Throwable $e) {
-//            Logger::info('No Start or Stop time is set.');
-
             return true;
         }
 
         if ($this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)) {
-            Logger::debug('it is current time.',
-                $this->greaterThanOrEqual($this->startTime) && $this->lessThanOrEqual($this->stopTime));
-
             return true;
         }
-        Logger::debug('it is not current time.',
-            $this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime));
+
+        return false;
+    }
+
+    public function isBetween($start = NULL, $stop = NULL) {
+        try {
+            if ($start === NULL || $stop === NULL) {
+                $start = getParam('start', true);
+                $stop = getParam('stop', true);
+            }
+            $this->startTime = $start;
+            $this->stopTime =  "$start +$stop";
+        } catch (\Throwable $e) {
+            throw new InvalidTimeException('Declared Time is not valid');
+        }
+
+        if ($this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)) {
+            return true;
+        }
 
         return false;
     }

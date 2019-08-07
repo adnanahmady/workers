@@ -7,6 +7,8 @@
  */
 namespace Worker\Core;
 
+use MongoDB\Driver\Exception\ConnectionException;
+
 /**
  * Class Model
  *
@@ -18,38 +20,38 @@ namespace Worker\Core;
  * @property $collection
  * @property $model
  * @method __construct()
- * @method array|object find(array $filter, array $options = [])
- * @method array|object findOne(array $filter, array $options = [])
- * @method object updateMany(array $filter, array $set, array $options = [])
- * @method object updateOne(array $filter, array $set, array $options = [])
- * @method array|object aggregate(array $options = [])
- * @method bulkWrite()
- * @method number count(array $filter = [])
- * @method createIndex()
- * @method createIndexes()
- * @method boolean deleteMany(array $filter)
- * @method boolean deleteOne(array $filter)
- * @method distinct()
- * @method boolean drop()
- * @method dropIndex()
- * @method dropIndexes()
- * @method array|object findOneAndDelete(array $filter)
- * @method array|object findOneAndReplace(array $filter, array $options = [])
- * @method array|object findOneAndUpdate(array $filter, array $options = [])
- * @method string getCollectionName()
- * @method string getDatabaseName()
- * @method getManager()
- * @method getNamespace()
- * @method getReadConcern()
- * @method getReadPreference()
- * @method getTypeMap()
- * @method getWriteConcern()
- * @method object insertMany(array $filter, array $options = [])
- * @method object insertOne(array $filter, array $options = [])
- * @method array|object listIndexes()
- * @method mapReduce()
- * @method object replaceOne(array $filter, array $options = [])
- * @method withOptions()
+ * @method static array|object find(array $filter, array $options = [])
+ * @method static array|object findOne(array $filter, array $options = [])
+ * @method static object updateMany(array $filter, array $set, array $options = [])
+ * @method static object updateOne(array $filter, array $set, array $options = [])
+ * @method static array|object aggregate(array $options = [])
+ * @method static bulkWrite()
+ * @method static number count(array $filter = [])
+ * @method static createIndex()
+ * @method static createIndexes()
+ * @method static boolean deleteMany(array $filter)
+ * @method static boolean deleteOne(array $filter)
+ * @method static distinct()
+ * @method static boolean drop()
+ * @method static dropIndex()
+ * @method static dropIndexes()
+ * @method static array|object findOneAndDelete(array $filter)
+ * @method static array|object findOneAndReplace(array $filter, array $options = [])
+ * @method static array|object findOneAndUpdate(array $filter, array $options = [])
+ * @method static string getCollectionName()
+ * @method static string getDatabaseName()
+ * @method static getManager()
+ * @method static getNamespace()
+ * @method static getReadConcern()
+ * @method static getReadPreference()
+ * @method static getTypeMap()
+ * @method static getWriteConcern()
+ * @method static object insertMany(array $filter, array $options = [])
+ * @method static object insertOne(array $filter, array $options = [])
+ * @method static array|object listIndexes()
+ * @method static mapReduce()
+ * @method static object replaceOne(array $filter, array $options = [])
+ * @method static withOptions()
  */
 class Model {
     /**
@@ -81,7 +83,7 @@ class Model {
      */
     private function collection()
     {
-        return static::get()->collection;
+        return static::init()->collection;
     }
 
     /**
@@ -94,9 +96,9 @@ class Model {
         if (get_class_vars(static::class)['collection'] === null) {
             $className = end(explode('\\', get_called_class()));
             preg_match_all('/[A-Z][a-z]*/', $className, $matches);
-            static::get()->collection = strtolower(implode('_', current($matches)) . 's');
+            static::init()->collection = strtolower(implode('_', current($matches)) . 's');
         } else {
-            static::get()->collection = get_class_vars(static::class)['collection'];
+            static::init()->collection = get_class_vars(static::class)['collection'];
         }
     }
 
@@ -107,7 +109,7 @@ class Model {
      */
     private function connection()
     {
-        return static::get()->connection;
+        return static::init()->connection;
     }
 
     /**
@@ -115,7 +117,7 @@ class Model {
      */
     private function setConnection()
     {
-        static::get()->connection = get_class_vars(static::class)['connection'];
+        static::init()->connection = get_class_vars(static::class)['connection'];
     }
 
     /**
@@ -130,9 +132,9 @@ class Model {
     {
         static::setConnection();
         static::setCollection();
-        static::get()->database = static::get()->Connect();
+        static::init()->database = static::init()->Connect();
 
-        return call_user_func_array([static::get()->database, $method], $args);
+        return call_user_func_array([static::init()->database, $method], $args);
     }
 
     /**
@@ -147,9 +149,9 @@ class Model {
     {
         static::setConnection();
         static::setCollection();
-        static::get()->database = static::get()->Connect();
+        static::init()->database = static::init()->Connect();
 
-        return call_user_func_array([static::get()->database, $method], $args);
+        return call_user_func_array([static::init()->database, $method], $args);
     }
 
     /**
@@ -159,9 +161,15 @@ class Model {
      */
     protected function Connect()
     {
-        return Connection::connect(static::connection())
-            ->{app(static::connection() . '.db')}
-            ->{static::get()->collection()};
+        try {
+            $connection = Connection::connect(static::connection())
+                ->{config('database.' . static::connection() . '.db')}
+                ->{static::init()->collection()};
+        } catch (\Throwable $exception) {
+            throw new ConnectionException($exception->getMessage());
+        }
+
+        return $connection;
     }
 
     /**
@@ -170,9 +178,9 @@ class Model {
      *
      * @return mixed
      */
-    private static function get()
+    private static function init()
     {
-        if (static::$model === null) {
+        if (static::$model === NULL) {
             static::$model = new static;
         }
 

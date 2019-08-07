@@ -14,26 +14,22 @@ while(true) {
         $connect = Worker::connect();
         $connect->channel()->consume($queue)->run();
     } catch (AMQPRuntimeException $e) {
-        Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
-        $connect->close();
+        Logger::emergency('RabbitMQ connection closed unexpectedly', ['message' => $e->getMessage()]);
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (\RuntimeException $e) {
-        Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
-        $connect->close();
+        Logger::emergency('RabbitMQ connection closed unexpectedly', ['message' => $e->getMessage()]);
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (\ErrorException $e) {
-        Logger::emergency('RabbitMQ connection closed unexpectedly', $e->getMessage());
-        $connect->close();
+        Logger::emergency('RabbitMQ connection closed unexpectedly', ['message' => $e->getMessage()]);
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (AMQPIOException $e) {
-        Logger::emergency('RabbitMQ couldn\'t connect to rabbit server', $e->getCode());
+        Logger::emergency('RabbitMQ couldn\'t connect to rabbit server', ['code' => $e->getCode()]);
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (AMQPIOWaitException $e) {
-        Logger::emergency('RabbitMQ did wait for too long to connect', $e->getCode());
+        Logger::emergency('RabbitMQ did wait for too long to connect', ['code' => $e->getCode()]);
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     } catch (\Throwable $e) {
-        Logger::emergency('FATAL ERROR',
-            "message ({$e->getMessage()}) file ({$e->getFile()}) line ({$e->getLine()})");
+        Logger::emergency($e->getMessage(), ['trace string' => $e->getTraceAsString()]);
         sleep(Worker::WAIT_BEFORE_RECONNECT_US);
     }
 }

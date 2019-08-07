@@ -3,13 +3,13 @@
 require_once __DIR__ . '/workers/bootstrap.php';
 
 use Worker\Task;
-use Worker\Job;
+use Worker\Extras\Job;
 
 $i = 0;
 $test = Task::connect();
 
 while (true) {
-    $test->channel()->queue(app('queue.order'))->basic_publish(
+    $test->channel()->queue(config('rabbit.queue.order'))->basic_publish(
         new Job(
             'export_excel',
             [

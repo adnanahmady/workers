@@ -11,6 +11,8 @@ return [
         'recpay' => env('ACCOUNTING_PLAN_ENDPOINT') . 'RecPay',
     ],
     'saman' => [
-        'normal_transfer' => env('SAMAN_NORMAL_TRANSFER_URL'),
+        'normal_transfer'   => env('SAMAN_NORMAL_TRANSFER_URL'),
+        'sheba'             => env('SAMAN_SHEBA_TRANSFER_URL'),
+        'check_sheba'       => env('SAMAN_SHEBA_TRANSFER_CHECK_URL')
     ],
 ];

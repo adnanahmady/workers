@@ -45,6 +45,19 @@ class Driver extends Model {
     }
 
     /**
+     * Update drivers Wallet amount
+     *
+     * @param      $filter
+     * @param      $amount
+     * @param bool $plus
+     *
+     * @return bool
+     */
+    public function checkWallet($filter, $amount, $plus = false) {
+        return DriverReferralList::checkWallet($filter, $amount, $plus);
+    }
+
+    /**
      * Get drivers wallet amount
      *
      * @param $args

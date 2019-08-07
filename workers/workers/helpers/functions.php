@@ -6,6 +6,13 @@
  * @copyright 2019 Hamyaraval Corporation
  */
 
+function loadEnvironments($path)
+{
+    $dotenv = \Dotenv\Dotenv::create($path);
+    $dotenv->load();
+}
+loadEnvironments(dirname(__DIR__, 2));
+
 /**
  * returns specified environment variable
  * or returns default value
@@ -29,18 +36,18 @@ function env($environment, $default = '') {
  * @param string $default
  * @return mixed|string
  */
-function app($path, $default = '') {
-    $app = Worker\Core\Core::getConfig();
+function config($path, $default = '') {
+    $config = Worker\Core\Core::getConfig();
     $path = explode('.', strtolower($path));
     foreach($path as $index) {
         try {
-            $app = $app[$index];
+            $config = $config[$index];
         } catch (\Throwable $e) {
             return $default;
         }
     }
 
-    return $app;
+    return $config;
 }
 
 /**
@@ -74,18 +81,38 @@ function getFileName($file) {
 }
 
 /**
+ * create and remove a temp file in /tmp path
+ *
+ * @param null $data
+ * @return \PhpOffice\PhpSpreadsheet\Spreadsheet
+ * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+ */
+function tempFile($data = null)
+{
+    $file = tempnam(sys_get_temp_dir(), 'excel_');
+    $handle = fopen($file, 'w');
+    fwrite($handle, $data);
+    $return = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
+    fclose($handle);
+    unlink($file);
+
+    return $return;
+}
+
+/**
  * Gets cli key:value pares argument
  *
  * @param $name
  * @param bool $exception
+ * @param string $separator
  * @return string
  * @throws InvalidArgumentException
  */
-function getParam($name, $exception = false) {
+function getParam($name, $exception = false, $separator = ':') {
     global $argv;
     $newName = explode(
-        ':',
-        array_values(preg_grep('/^' . $name . ':(\w+)/i', $argv))[0]
+        $separator,
+        array_values(preg_grep('/^' . $name . $separator . '(\w+)/i', $argv))[0]
     );
     array_shift($newName);
     $argName = implode(':', $newName);
@@ -95,4 +122,10 @@ function getParam($name, $exception = false) {
     }
 
     return $argName;
+}
+
+function sendTask($queue, $job, $data = [], $success = [], $fails = [], $date = NULL) {
+    \Worker\Task::connect()->channel()->queue($queue)->basic_publish(
+        new \Worker\Extras\Job($job, $data, $success, $fails, $date)
+    );
 }

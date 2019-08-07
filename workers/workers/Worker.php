@@ -8,9 +8,12 @@
 namespace Worker;
 
 use Worker\Abstracts\AbstractWorker;
+use Worker\Extras\Job;
 use Worker\Extras\Logger;
 use Worker\Extras\Timer;
 use Worker\Exceptions\WorkerTimeOutException;
+use Worker\Models\SamanTransactionDocument;
+use Worker\Models\ShebaTransactionDocument;
 
 /**
  * Class Worker | checks time and runs callback based on job title | handles callbacks Exceptions
@@ -31,35 +34,30 @@ class Worker extends AbstractWorker {
                 $this->checkBlock();
 
                 if (! (new Timer())->check()) {
-                    $this->ack($msg);
+                    if (preg_match('/saman/', Job::getJobData($msg)['bank_type']))
+                    {
+                        SamanTransactionDocument::updateOne(
+                            ['_id' => (Job::getJobData($msg))['_id']],
+                            ['$set' => ['exception' => 'Time out Task Exception']]
+                        );
+                    } else {
+                        ShebaTransactionDocument::updateOne(
+                            ['_id' => (Job::getJobData($msg))['_id']],
+                            ['$set' => ['exception' => 'Time out Task Exception']]
+                        );
+                    }
                     throw new WorkerTimeOutException('Time out Task Exception');
                 }
 
                 $Callback = new $callback;
                 $Callback($msg);
             } catch (WorkerTimeOutException $e) {
-                Logger::alert(
-                    Job::getJobName($msg),
-                    json_encode(Job::getJobData($msg)),
-                    json_encode([]),
-                    json_encode([
-                        'message' => $e->getMessage() ? $e->getMessage() : 'NULL',
-                        'code' => $e->getCode() ? $e->getCode() : 'NULL',
-                    ]));
+                $this->ack($msg);
+                Logger::emergency($e->getMessage());
             } catch (\Throwable $e) {
-                Logger::alert(
-                    Job::getJobName($msg),
-                    json_encode(Job::getJobData($msg)),
-                    json_encode([]),
-                    json_encode([
-                        'message' => $e->getMessage() ? $e->getMessage() : 'NULL',
-                        'file' => $e->getFile() ? $e->getFile() : 'NULL',
-                        'line' => $e->getLine() ? $e->getLine() : 'NULL',
-                        'code' => $e->getCode() ? $e->getCode() : 'NULL',
-                        'stackTrace' => $e->getTraceAsString() ? $e->getTraceAsString() : 'NULL',
-                    ]));
+                $this->ack($msg);
+                Logger::emergency($e->getMessage());
             }
-
         });
     }
 }

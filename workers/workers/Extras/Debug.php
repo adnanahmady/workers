@@ -5,6 +5,7 @@ namespace Worker\Extras;
 use Monolog\Handler\FirePHPHandler;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Psr\Log\NullLogger;
 
 /**
  * Class Debug
@@ -26,23 +27,18 @@ class Debug {
      *
      * @param        $logName
      * @param string $logType
+     * @param null   $logPath
      */
-    public function __construct($logName, $logType = 'terminal') {
+    public function __construct($logName, $logType = 'terminal', $logPath = NULL) {
         $this->logType = $logType;
         if ($this->logType !== 'terminal') {
             $this->logger = new Logger($logName);
             try {
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::DEBUG));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::INFO));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::NOTICE));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::WARNING));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::ERROR));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::CRITICAL));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::ALERT));
-                $this->logger->pushHandler(new StreamHandler('/logs/logs.log', Logger::EMERGENCY));
+                $this->logger->pushHandler(new StreamHandler(
+                    ($logType === NULL OR empty($logType)) ? config('log.path') : $logPath
+                ));
                 $this->logger->pushHandler(new FirePHPHandler());
             } catch (\Throwable $e) {}
-            $this->logger->info('Logger is now ready!');
         }
     }
 
@@ -54,16 +50,15 @@ class Debug {
      */
     public function __call($name, $arguments) {
         if ($this->logType !== 'terminal') {
-            $db = (debug_backtrace())[2];
-            $arguments['file'] = end(explode('/', $db['file']));
-            $arguments['line'] = $db['line'];
-            unset($db);
-            foreach($arguments as $key => $value) {
-                $arguments[$key] = str_replace("\\", '', json_encode($value));
-            }
-            $this->logger->$name(strtoupper($name), $arguments);
+            $this->logger->pushProcessor(function ($record) {
+                $record['extra']['backtrace'] = debug_backtrace();
+
+                return $record;
+            });
+
+            call_user_func_array([$this->logger, $name], $arguments);
         } else {
-            $this->echoTerminal($name, $arguments);
+            call_user_func_array([$this, 'echoTerminal'], [$name, $arguments]);
         }
     }
 
@@ -74,13 +69,15 @@ class Debug {
      * @throws \Exception
      */
     public function echoTerminal($name, $arguments) {
-        $db = (debug_backtrace())[2];
-        $file = end(explode('/', $db['file']));
-        $line = $db['line'];
-        unset($db);
+        $backtrace = end(debug_backtrace());
+        $file = end(explode('/', $backtrace['file']));
+        $line = $backtrace['line'];
+        unset($backtrace);
         echo (new Timer())->format('Y-m-d H:i:s'),
-            ' ', strtoupper($name) , " \"$file:$line\" ",
-            json_encode($arguments), PHP_EOL;
+        ' ', strtoupper($name) , " \"$file:$line\" ",
+        json_encode(array_shift($arguments), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE), ' ',
+        json_encode($arguments, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE),
+        PHP_EOL;
     }
 
     /**

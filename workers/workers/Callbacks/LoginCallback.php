@@ -57,10 +57,10 @@ class LoginCallback extends AbstractCallback {
                     'Accept' => 'application/json'
                 ],
                 'json' => [
-                    "channel" => app('saman.login.channel'),
-                    "password" => app('saman.login.pass'),
-                    "secretkey" => app('saman.login.secret_key'),
-                    "username" => app('saman.login.user')
+                    "channel" => config('bank.saman.login.channel'),
+                    "password" => config('bank.saman.login.pass'),
+                    "secretkey" => config('bank.saman.login.secret_key'),
+                    "username" => config('bank.saman.login.user')
                 ]
             ]
         );

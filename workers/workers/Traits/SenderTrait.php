@@ -10,8 +10,16 @@ use GuzzleHttp\Client as Guzzle;
  */
 trait SenderTrait
 {
+    public function getGuzzleHeaders() {
+        return [
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+    }
     public function getSamanTransactionOptions($data, $token) {
         return [
+            'synchronous' => true,
+            'headers' => $this->getGuzzleHeaders(),
             'json' => [
                 "additionalDocumentDesc" => $data["additionalDocumentDesc"],
                 "amount" => $data["amount"],
@@ -30,6 +38,8 @@ trait SenderTrait
 
     public function getShebaTransactionOptions($data, $token) {
         return [
+            'synchronous' => true,
+            'headers' => $this->getGuzzleHeaders(),
             'json' => [
                 "amount" => $data["amount"],
                 "channel" => $data["channel"],

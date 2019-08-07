@@ -11,14 +11,20 @@ class DetailRelation extends Model
     /**
      * Get drivers wallet amount
      *
-     * @param $args
+     * @static
+     * @param $filter
      * @return int
      */
     public function getUser($filter)
     {
         $filter = (is_array($filter) ? $filter : ['detail_code' => (string) $filter]);
+
+        if (isset($filter['detail_code']))
+        {
+            $filter['detail_code'] = (string) $filter['detail_code'];
+        }
         $options = [
-            'projection' => ['userid' => 1]
+            'projection' => ['_id' => 0, 'userid' => 1]
         ];
         $res = static::find($filter, $options)->toArray();
 

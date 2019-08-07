@@ -14,8 +14,8 @@ class Passenger extends Model {
      * Get passengers wallet amount
      *
      * @param $filter
+     *
      * @return int
-     * @throws \Exception
      */
     public function getAmount($filter)
     {
@@ -31,11 +31,11 @@ class Passenger extends Model {
     /**
      * Update passengers wallet amount
      *
-     * @param $filter
-     * @param $amount
+     * @param      $filter
+     * @param      $amount
      * @param bool $plus
+     *
      * @return bool
-     * @throws \Exception
      */
     public function updateWallet($filter, $amount, $plus = false) {
         $filter = (is_array($filter) ? $filter : ['detail_code' => $filter]);
@@ -46,10 +46,9 @@ class Passenger extends Model {
             $passengerAmount - $amount :
             $passengerAmount + $amount;
 
-        if ($amount < static::MIN_PASSENGER_AMOUNT) {
+        if ($amount < static::MIN_PASSENGER_AMOUNT && ! $plus) {
             return false;
         }
-
         $result = static::updateOne($filter,
             [
                 '$set' => [
@@ -64,5 +63,30 @@ class Passenger extends Model {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Check passengers wallet amount
+     *
+     * @param      $filter
+     * @param      $amount
+     * @param bool $plus
+     *
+     * @return bool
+     */
+    public function checkWallet($filter, $amount, $plus = false) {
+        $filter = (is_array($filter) ? $filter : ['detail_code' => $filter]);
+        $filter = DetailRelation::getUser($filter);
+        $filter = (is_array($filter) ? $filter : ['_id' => $filter]);
+        $passengerAmount = static::getAmount($filter);
+        $amount = (! $plus) ?
+            $passengerAmount - $amount :
+            $passengerAmount + $amount;
+
+        if ($amount < static::MIN_PASSENGER_AMOUNT && ! $plus) {
+            return false;
+        }
+
+        return true;
     }
 }

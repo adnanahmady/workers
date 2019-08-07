@@ -4,24 +4,28 @@ namespace Worker\Callbacks;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use Worker\Abstracts\AbstractCallback;
+use Worker\Extras\Job;
 use Worker\Extras\Logger;
 use Worker\Extras\Timer;
-use Worker\Models\TransactionDocument;
-use Worker\Task;
-use Worker\Job;
+use Worker\Models\SamanTransactionDocument;
+use Worker\Models\ShebaTransactionDocument;
 
 class LoadTasksCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
-        $task       = Task::connect();
         $date     = (string) (new Timer())->format('Y-m-d');
-        $data       = TransactionDocument::find(['date' => $date]);
+        if (Job::getJobData($msg)['subject'] == 'saman')
+        {
+            $data = SamanTransactionDocument::find(['date' => $date]);
+        }
+        else
+        {
+            $data = ShebaTransactionDocument::find(['date' => $date]);
+        }
 
         foreach($data as $row) {
-            $bankType = $row['bank_type'];
-            unset($row['bank_type']);
-            $task->channel()->queue(app('queue.order'))->basic_publish(new Job($bankType, $row));
+            sendTask(config('rabbit.queue.order'), 'validate_' . $row['bank_type'], $row);
         }
-        Logger::debug('load from database and send to rabbit finished');
+        Logger::info('load from database and send to rabbit finished');
         $this->ack($msg);
 
         return $msg;
