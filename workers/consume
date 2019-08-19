@@ -1,0 +1,67 @@
+<?php
+
+require_once __DIR__ . '/workers/bootstrap.php';
+
+use Worker\Worker;
+use PhpAmqpLib\Exception\AMQPRuntimeException;
+use PhpAmqpLib\Exception\AMQPIOException;
+use PhpAmqpLib\Exception\AMQPIOWaitException;
+use Worker\Extras\Logger;
+
+while(true) {
+    try {
+        $connect = new \Worker\Consumer();
+        $connect->callback(function ($msg) {
+            $callback = $this->getJobName($msg);
+
+            try {
+                $this->checkBlock();
+
+                if (! (new Timer())->check()) {
+                    $jobData = Job::getJobData($msg);
+                    if (preg_match('/saman/', $jobData['bank_type']))
+                    {
+                        SamanTransactionDocument::updateOne(
+                            ['_id' => $jobData['_id']],
+                            ['$set' => ['exception' => 'Time out Task Exception']]
+                        );
+                    } else {
+                        ShebaTransactionDocument::updateOne(
+                            ['_id' => $jobData['_id']],
+                            ['$set' => ['exception' => 'Time out Task Exception']]
+                        );
+                    }
+                    throw new WorkerTimeOutException('Time out Task Exception');
+                }
+
+                $Callback = new $callback;
+                $Callback($msg);
+            } catch (WorkerTimeOutException $e) {
+                $this->ack($msg);
+                Logger::emergency($e->getMessage());
+            } catch (\Throwable $e) {
+                $this->ack($msg);
+                Logger::emergency($e->getMessage());
+            }
+        });
+        $connect->channel()->consume($queue)->run();
+    } catch (AMQPRuntimeException $e) {
+        Logger::emergency('RabbitMQ connection closed unexpectedly', ['message' => $e->getMessage()]);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (\RuntimeException $e) {
+        Logger::emergency('RabbitMQ connection closed unexpectedly', ['message' => $e->getMessage()]);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (\ErrorException $e) {
+        Logger::emergency('RabbitMQ connection closed unexpectedly', ['message' => $e->getMessage()]);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (AMQPIOException $e) {
+        Logger::emergency('RabbitMQ couldn\'t connect to rabbit server', ['code' => $e->getCode()]);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (AMQPIOWaitException $e) {
+        Logger::emergency('RabbitMQ did wait for too long to connect', ['code' => $e->getCode()]);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    } catch (\Throwable $e) {
+        Logger::emergency($e->getMessage(), ['trace string' => $e->getTraceAsString()]);
+        sleep(Worker::WAIT_BEFORE_RECONNECT_US);
+    }
+}
