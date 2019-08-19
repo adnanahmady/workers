@@ -16,6 +16,7 @@ use Worker\Extras\Job;
 use Worker\Extras\Logger;
 use Worker\Models\Flag;
 use Worker\Models\SamanTransactionDocument;
+use Worker\Models\ShebaTransactionDocument;
 use Worker\Models\Worker;
 use Worker\Reflector\Reflector;
 use Worker\Traits\SenderTrait;
@@ -51,22 +52,49 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
                 $response = json_decode($res->getBody()->getContents(), true);
                 $content['sabt_dar_sanadpardaz_(ID)'] = $response['Id'];
                 $content['sabt_dar_sanadpardaz_response'] = $response;
-                $result = SamanTransactionDocument::updateOne(
-                    ['_id' => $data['_id']],
-                    ['$set' => $content],
-                    ['upsert' => false]
-                );
-//                Logger::info('data upserted', $result->getUpsertedCount());
+                if (preg_match('/saman/', $data['bank_type']))
+                {
+                    $result = SamanTransactionDocument::updateOne(
+                        ['_id' => $data['_id']],
+                        ['$set' => $content],
+                        ['upsert' => false]
+                    );
+                }
+                else
+                {
+                    $result = ShebaTransactionDocument::updateOne(
+                        ['_id' => $data['_id']],
+                        ['$set' => $content],
+                        ['upsert' => false]
+                    );
+                }
+                Logger::debug('response', ['response' => $response]);
+                Logger::debug('content', ['content' => $content]);
+                Logger::info('data upserted', ['upsert count' => $result->getUpsertedCount()]);
                 break;
             } catch (\GuzzleHttp\Exception\ClientException $e) {
-                SamanTransactionDocument::updateOne(
-                    ['_id' => $data['_id']],
-                    ['$set' => ['exception_sanadpardaz' => [
-                        'message' => $e->getResponse()->getBody()->getContents(),
-                        'trace' => $e->getTraceAsString()
-                    ]]],
-                    ['upsert' => false]
-                );
+                if (preg_match('/saman/', $data['bank_type']))
+                {
+                    SamanTransactionDocument::updateOne(
+                        ['_id' => $data['_id']],
+                        ['$set' => ['exception_sanadpardaz' => [
+                            'message' => $e->getResponse()->getBody()->getContents(),
+                            'trace' => $e->getTraceAsString()
+                        ]]],
+                        ['upsert' => FALSE]
+                    );
+                }
+                else
+                {
+                    ShebaTransactionDocument::updateOne(
+                        ['_id' => $data['_id']],
+                        ['$set' => ['exception_sanadpardaz' => [
+                            'message' => $e->getResponse()->getBody()->getContents(),
+                            'trace' => $e->getTraceAsString()
+                        ]]],
+                        ['upsert' => FALSE]
+                    );
+                }
 
                 throw new InvalidRequestException(
                     $e->getMessage() ?
@@ -74,14 +102,28 @@ class InsertToAccountingPlanCallback extends AbstractCallback {
                         'Gazzle Http faced an unknown problem'
                 );
             } catch (\Throwable $e) {
-                SamanTransactionDocument::updateOne(
-                    ['_id' => $data['_id']],
-                    ['$set' => ['exception_sanadpardaz' => [
-                        'message' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]]],
-                    ['upsert' => false]
-                );
+                if (preg_match('/saman/', $data['bank_type']))
+                {
+                    SamanTransactionDocument::updateOne(
+                        ['_id' => $data['_id']],
+                        ['$set' => ['exception_sanadpardaz' => [
+                            'message' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]]],
+                        ['upsert' => FALSE]
+                    );
+                }
+                else
+                {
+                    ShebaTransactionDocument::updateOne(
+                        ['_id' => $data['_id']],
+                        ['$set' => ['exception_sanadpardaz' => [
+                            'message' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]]],
+                        ['upsert' => FALSE]
+                    );
+                }
 
                 throw new InvalidRequestException(
                     $e->getMessage() ?

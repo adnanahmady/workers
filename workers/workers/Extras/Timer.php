@@ -25,7 +25,10 @@ class Timer extends DateTime {
             return true;
         }
 
-        if ($this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)) {
+        if (
+            $this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)
+//            strtotime("$jobDate +" . config('time.sleep')) - strtotime('now')
+        ) {
             return true;
         }
 
@@ -39,12 +42,16 @@ class Timer extends DateTime {
                 $stop = getParam('stop', true);
             }
             $this->startTime = $start;
-            $this->stopTime =  "$start +$stop";
+            $this->stopTime  = "$start +$stop";
         } catch (\Throwable $e) {
             throw new InvalidTimeException('Declared Time is not valid');
         }
 
-        if ($this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)) {
+        if (
+//            $this->lessThanOrEqual($this->startTime) && $this->greaterThanOrEqual($this->stopTime)
+            strtotime($this->stopTime) - strtotime('now') > -1 &&
+            strtotime($this->startTime) - strtotime('now') < 1
+        ) {
             return true;
         }
 

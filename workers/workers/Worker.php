@@ -12,6 +12,7 @@ use Worker\Extras\Job;
 use Worker\Extras\Logger;
 use Worker\Extras\Timer;
 use Worker\Exceptions\WorkerTimeOutException;
+use Worker\Extras\Transform;
 use Worker\Models\SamanTransactionDocument;
 use Worker\Models\ShebaTransactionDocument;
 
@@ -28,21 +29,22 @@ class Worker extends AbstractWorker {
     public function channel() {
         parent::channel();
         return $this->callback(function ($msg) {
-            $callback = $this->getJobName($msg);
+            $callback = (string) new Transform((string) Job::getJobName($msg));
 
             try {
                 $this->checkBlock();
 
                 if (! (new Timer())->check()) {
-                    if (preg_match('/saman/', Job::getJobData($msg)['bank_type']))
+                    $jobData = Job::getJobData($msg);
+                    if (preg_match('/saman/', $jobData['bank_type']))
                     {
                         SamanTransactionDocument::updateOne(
-                            ['_id' => (Job::getJobData($msg))['_id']],
+                            ['_id' => $jobData['_id']],
                             ['$set' => ['exception' => 'Time out Task Exception']]
                         );
                     } else {
                         ShebaTransactionDocument::updateOne(
-                            ['_id' => (Job::getJobData($msg))['_id']],
+                            ['_id' => $jobData['_id']],
                             ['$set' => ['exception' => 'Time out Task Exception']]
                         );
                     }
@@ -53,10 +55,10 @@ class Worker extends AbstractWorker {
                 $Callback($msg);
             } catch (WorkerTimeOutException $e) {
                 $this->ack($msg);
-                Logger::emergency($e->getMessage());
+                Logger::emergency($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             } catch (\Throwable $e) {
                 $this->ack($msg);
-                Logger::emergency($e->getMessage());
+                Logger::emergency($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             }
         });
     }

@@ -7,11 +7,13 @@
  */
 namespace Worker;
 
+use Worker\Abstracts\AbstractConsumer;
 use Worker\Abstracts\AbstractWorker;
 use Worker\Extras\Job;
 use Worker\Extras\Logger;
 use Worker\Extras\Timer;
 use Worker\Exceptions\WorkerTimeOutException;
+use Worker\Extras\Transform;
 use Worker\Models\SamanTransactionDocument;
 use Worker\Models\ShebaTransactionDocument;
 
@@ -19,16 +21,11 @@ use Worker\Models\ShebaTransactionDocument;
  * Class Worker | checks time and runs callback based on job title | handles callbacks Exceptions
  * @package Worker
  */
-class Worker extends AbstractWorker {
-    /**
-     * call parent channel and then return callback
-     *
-     * @return AbstractWorker|Worker
-     */
-    public function channel() {
-        parent::channel();
+class Consumer extends AbstractConsumer {
+    public function __construct()
+    {
         return $this->callback(function ($msg) {
-            $callback = $this->getJobName($msg);
+            $callback = (string) new Transform((string) Job::getJobName($msg));
 
             try {
                 $this->checkBlock();
@@ -60,5 +57,6 @@ class Worker extends AbstractWorker {
                 Logger::emergency($e->getMessage());
             }
         });
+
     }
 }

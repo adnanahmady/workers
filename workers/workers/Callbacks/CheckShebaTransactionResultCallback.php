@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\ClientException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Worker\Abstracts\AbstractCallback;
 use Worker\Exceptions\InvalidRequestException;
+use Worker\Exceptions\RejectionException;
 use Worker\Extras\Job;
 use Worker\Extras\Logger;
 use Worker\Extras\ShebaCheck;
@@ -19,6 +20,7 @@ class CheckShebaTransactionResultCallback extends AbstractCallback {
         Logger::setPath(config('log.block.path'));
         Logger::setDebug();
         $jobDate = Job::getJobDate($msg);
+
         if (! ((new Timer())->isBetween($jobDate, config('time.stop'))))
         {
             $this->wait($jobDate);
@@ -31,7 +33,6 @@ class CheckShebaTransactionResultCallback extends AbstractCallback {
             try {
                 $options = new ShebaCheck($data);
                 $options->setToken($token);
-                $options->setReferenceId($data['referenceId']);
                 $options = $options->toArray();
                 $res = (new Client())->request(
                     'POST',
@@ -39,31 +40,37 @@ class CheckShebaTransactionResultCallback extends AbstractCallback {
                     $options
                 );
                 $response = json_decode($res->getBody()->getContents(), true);
-                $response['status'] = $response;
                 $response['final_transactionStatus'] = $response['transactions'][0]['status'];
                 ShebaTransactionDocument::insertBankResult(
                     $data['_id'],
                     $response,
                     $options['json']['trackerId']
                 );
+                $data = array_merge($data, $response);
+
+                if ($data['transactionStatus'] != 'ACCEPTED')
+                {
+                    throw new RejectionException('Transfer Rejected [transactionStatus]="' .
+                        $data['transactionStatus'] . '"');
+                }
 
                 if ($response['final_transactionStatus'] != 'TRANSFERRED')
                 {
+                    $date = date(
+                        'Y-m-d H:i:s',
+                        strtotime("$jobDate +" . config('time.restart'))
+                    );
                     sendTask(
                         config('rabbit.queue.block'),
                         'check_sheba_transaction_result',
-                        $data
+                        $data,
                         [],
                         [],
-                        date(
-                            'H:i:s',
-                            strtotime("$jobDate +" . config('time.restart'))
-                        )
+                        $date
                     );
                     break;
                 }
                 ShebaTransactionDocument::updateUserWallet($data);
-                $data[] = $response;
                 sendTask(
                     config('rabbit.queue.priority'),
                     'insert_to_accounting_plan',
@@ -82,7 +89,9 @@ class CheckShebaTransactionResultCallback extends AbstractCallback {
                 else:
                     ShebaTransactionDocument::updateOne(
                         ['_id' => $data['_id']],
-                        ['$set' => ['exception' => $e->getResponse()->getBody()->getContents()]]
+                        ['$set' => [
+                            'exception' => $e->getResponse()->getBody()->getContents(),
+                        ]]
                     );
                     throw new InvalidRequestException(
                         $e->getMessage() ?
@@ -94,7 +103,7 @@ class CheckShebaTransactionResultCallback extends AbstractCallback {
             } catch (\Throwable $e) {
                 ShebaTransactionDocument::updateOne(
                     ['_id' => $data['_id']],
-                    ['$set' => ['exception' => $e->getMessage()]]
+                    ['$set' => ['exception' => $e->getMessage() . ' file: ' . $e->getFile() . ' line: ' . $e->getFile()]]
                 );
 
                 throw new InvalidRequestException(

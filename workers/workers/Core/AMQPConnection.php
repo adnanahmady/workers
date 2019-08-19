@@ -44,7 +44,17 @@ class AMQPConnection  extends AbstractSingleton {
                 config('rabbit.host'),
                 config('rabbit.port'),
                 config('rabbit.user'),
-                config('rabbit.pass')
+                config('rabbit.pass'),
+                '/',
+                false,
+                'AMQPLAIN',
+                null,
+                'en_US',
+                30.0,
+                130.0,
+                null,
+                true,
+                60
             );
         }
 

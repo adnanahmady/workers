@@ -129,3 +129,18 @@ function sendTask($queue, $job, $data = [], $success = [], $fails = [], $date = 
         new \Worker\Extras\Job($job, $data, $success, $fails, $date)
     );
 }
+
+function setInterval($callback, $sleep)
+{
+    while (true)
+    {
+        $callback();
+        sleep($sleep);
+    }
+}
+
+function setTimeout($callback, $sleep)
+{
+    sleep($sleep);
+    $callback();
+}

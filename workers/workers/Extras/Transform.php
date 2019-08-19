@@ -15,7 +15,8 @@ class Transform {
         $this->string = $newString;
     }
 
-    public function __toString() {
+    public function __toString(): string
+    {
         $file = '\\Worker\\Callbacks\\' . $this->string;
         $path = dirname(__DIR__) . '/Callbacks/' . $this->string . 'Callback.php';
 

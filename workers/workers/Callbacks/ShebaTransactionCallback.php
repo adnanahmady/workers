@@ -37,14 +37,18 @@ class ShebaTransactionCallback extends AbstractCallback {
                     $response,
                     $options['json']['trackerId']
                 );
-                $data += $response;
+                $data = array_merge($data, $response);
+                $date = (strtotime(config('time.start')) - strtotime( 'now') > -1) ?
+                    date('Y-m-d', strtotime('now')) . ' ' . config('time.start') :
+                    date('Y-m-d', strtotime('tomorrow')) . ' ' . config('time.start')
+                ;
                 sendTask(
                     config('rabbit.queue.block'),
                     'check_sheba_transaction_result',
                     $data,
                     [],
                     [],
-                    config('time.start')
+                    $date
                 );
                 Logger::info('transaction passed for check result later',
                     ['transaction id' => $data['_id']]);

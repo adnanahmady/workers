@@ -69,6 +69,19 @@ trait CheckTransactionTrait
      *
      * @throws \Worker\Exceptions\InvalidFieldException
      */
+    protected function checkReferenceId($data)
+    {
+        if (!empty($data["referenceId"]))
+        {
+            throw new InvalidFieldException('referenceId is not empty');
+        }
+    }
+
+    /**
+     * @param $data
+     *
+     * @throws \Worker\Exceptions\InvalidFieldException
+     */
     protected function amountValidation($data, $transaction)
     {
         if (!preg_match('/\d+/', $data['amount']))

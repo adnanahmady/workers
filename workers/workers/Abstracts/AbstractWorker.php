@@ -44,12 +44,6 @@ abstract class AbstractWorker {
         return $this;
     }
 
-    public function getJobName($msg) {
-        $callbackName = json_decode($msg->body)->job;
-
-        return (string) new Transform((string) $callbackName);
-    }
-
     public function callback($callback) {
         $this->callback = $callback;
 

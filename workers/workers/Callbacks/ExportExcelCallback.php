@@ -29,7 +29,7 @@ class ExportExcelCallback extends AbstractCallback {
         makeDir($file);
         if (empty($filename)) {
             $this->ack($msg);
-            Logger::emergency('file name report', ['filename' => $filename]);
+            Logger::emergency('file name is empty', ['filename' => $filename]);
 
             return $msg;
         }
@@ -38,7 +38,7 @@ class ExportExcelCallback extends AbstractCallback {
             file_put_contents($file, file_get_contents($inputFileName));
         } catch (\Throwable $e) {
             $this->ack($msg);
-            Logger::emergency($e->getMessage());
+            Logger::emergency($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
 
             return $msg;
         }

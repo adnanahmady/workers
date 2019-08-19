@@ -4,7 +4,7 @@ namespace Worker\Abstracts;
 
 use Worker\Interfaces\FlagInterface;
 
-class AbstractReflector
+abstract class AbstractReflector
 {
     protected $reflectingClass;
 

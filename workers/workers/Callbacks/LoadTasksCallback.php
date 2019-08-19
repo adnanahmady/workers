@@ -19,7 +19,10 @@ class LoadTasksCallback extends AbstractCallback {
         }
         else
         {
-            $data = ShebaTransactionDocument::find(['date' => $date]);
+            $data = ShebaTransactionDocument::find([
+                'date' => $date,
+                'transactionStatus' => ['$ne' => 'ACCEPTED']
+            ]);
         }
 
         foreach($data as $row) {

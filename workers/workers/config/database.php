@@ -21,11 +21,11 @@ return [
         /**
          * drivers are [mongodb, pgsql, mysql, sqlsrv, odbc]
          */
-        'driver' => env('MONGO2_DRIVER', 'mongodb'),
-        'db' => env('MONGO2_DB', 'test'),
-        'user' => env('MONGO2_USER', 'root'),
-        'pass' => env('MONGO2_PASS', 'secret'),
-        'host' => env('MONGO2_HOST', 'mongo'),
-        'port' => env('MONGO2_PORT', 27017),
+        'driver' => env('MONGO_HAMYAR_DRIVER', 'mongodb'),
+        'db' => env('MONGO_HAMYAR_DB', 'test'),
+        'user' => env('MONGO_HAMYAR_USER', 'root'),
+        'pass' => env('MONGO_HAMYAR_PASS', 'secret'),
+        'host' => env('MONGO_HAMYAR_HOST', 'mongo'),
+        'port' => env('MONGO_HAMYAR_PORT', 27017),
     ],
 ];

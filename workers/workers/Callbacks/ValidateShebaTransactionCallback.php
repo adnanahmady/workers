@@ -14,7 +14,7 @@ class ValidateShebaTransactionCallback extends AbstractCallback {
     public function __invoke(AMQPMessage $msg): AMQPMessage {
         $data = Job::getJobData($msg);
 
-        $this->checkReferenceNumber($data);
+        $this->checkReferenceId($data);
         $this->amountValidation($data, ShebaTransactionDocument::class);
         $this->isTafzilSet($data, ShebaTransactionDocument::class);
         $this->isTafzilEmpty($data, ShebaTransactionDocument::class);

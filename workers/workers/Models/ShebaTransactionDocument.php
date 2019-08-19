@@ -20,6 +20,14 @@ class ShebaTransactionDocument extends Model
      */
     public static function insertBankResult($transactionId, $response, $trackerId)
     {
+//        foreach($response as $key => $value):
+//            if (gettype($value) === 'array'):
+//                if (preg_match('/[0-9]/', $key)):
+//                    $response += $value;
+//                    unset($response[$key]);
+//                endif;
+//            endif;
+//        endforeach;
         $response['Date(miladi)'] = date('Y-m-d');
         $response['date(shamsi)'] = jdate(time())->format('Y-m-d');
         $response['Time(API)'] = date('H:i:s');
@@ -41,7 +49,7 @@ class ShebaTransactionDocument extends Model
      */
     public function updateUserWallet($data, $plus = FALSE)
     {
-        $this->checkWallet($data, static::class);
+        static::checkWallet($data, static::class);
 
         if (preg_match('/^70/', $data['tafzil']))
         {

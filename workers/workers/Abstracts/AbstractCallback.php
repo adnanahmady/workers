@@ -3,13 +3,15 @@
 namespace Worker\Abstracts;
 
 use PhpAmqpLib\Message\AMQPMessage;
+use Worker\Core\AMQPConnection;
+use Worker\Extras\Logger;
 use Worker\Interfaces\CallbackInterface;
 use Worker\Task;
 use Worker\Extras\Job;
 
 abstract class AbstractCallback implements CallbackInterface {
     const WAIT_FOR_LOGIN = 3;
-    const REQUEST_WAIT = 1;
+    const REQUEST_WAIT = 2;
 
     /**
      * sets expiration time of waiting for a request
@@ -39,8 +41,17 @@ abstract class AbstractCallback implements CallbackInterface {
      *
      * @param string $jobDate
      */
-    protected function wait(string $jobDate)
+    public function wait(string $jobDate)
     {
-        sleep(strtotime("$jobDate +" . config('time.sleep')) - strtotime('now'));
+        $seconds = strtotime($jobDate) - strtotime('now');
+        $steps = 5;
+        Logger::debug(strtotime('now') - strtotime($jobDate));
+        Logger::debug($seconds);
+        for ($second = $seconds; $second > 0; $second -= $steps)
+        {
+            setTimeout(function (){
+                AMQPConnection::connect()->amqp->getIO()->read(0);
+            }, $steps);
+        }
     }
 }
